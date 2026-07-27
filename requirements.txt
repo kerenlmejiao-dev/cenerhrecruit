@@ -11,7 +11,6 @@ alembic==1.12.1
 
 # PDF Generation
 reportlab==4.0.9
-pillow==10.2.0
 
 # Email
 aiosmtplib==3.0.1
