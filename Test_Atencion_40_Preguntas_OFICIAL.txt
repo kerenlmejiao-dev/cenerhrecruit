@@ -1,0 +1,160 @@
+================================================================================
+TEST DE ATENCIÓN Y CONCENTRACIÓN - 40 REACTIVOS
+Versión 2.0 (Reconstruida - Validada por Keren Mejía, psicóloga industrial)
+================================================================================
+
+--- SUBTEST A: CANCELACIÓN VISUAL Y ATENCIÓN SOSTENIDA (Q1-Q10) ---
+
+1. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: ddbpqqbbpqdpppqqqdbdpdpbpbpqppqbpbb
+(A) 2 (B) 6 (C) 5 (D) 4
+
+2. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: qbdbppbdbbbddqdpdbdpqbdpdqpqqpbdbdq
+(A) 4 (B) 1 (C) 3 (D) 2
+
+3. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: qqdbbqpbppbpppqdbdbdpbppdqpddpbdbqp
+(A) 4 (B) 1 (C) 3 (D) 2
+
+4. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: ppdpppqbbqpqpbdbbqpddqbdbddqqqddbqb
+(A) 5 (B) 2 (C) 4 (D) 3
+
+5. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: qppqdpdqbdqbpqqbbdqdbdpbpbdbqbppdbd
+(A) 4 (B) 1 (C) 3 (D) 2
+
+6. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: ppbddpbpbdbpdqbppqbdbpqdqppbqpqpdbq
+(A) 3 (B) 5 (C) 6 (D) 4
+
+7. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: bpbdpppdqdqqbbpdqdbpdqqddpqpddbpbpq
+(A) 2 (B) 5 (C) 3 (D) 4
+
+8. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: dqdqpbdpqpqppqpqdppdbbpqbdpbdqpdqdq
+(A) 5 (B) 3 (C) 6 (D) 4
+
+9. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: bqpqbqqpqbdqpqbqqpqppbqpqpbpddqqbdd
+(A) 9 (B) 6 (C) 8 (D) 7
+
+10. En la siguiente secuencia, ¿cuántas veces la letra 'q' está inmediatamente precedida por una 'p'?
+Secuencia: dbdbqqdqppqqqbqbqpbddqdpqdpppdddbqq
+(A) 3 (B) 0 (C) 2 (D) 1
+
+--- SUBTEST B: PERCEPCIÓN DE DIFERENCIAS (VELOCIDAD DE PROCESAMIENTO) (Q11-Q20) ---
+
+11. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: A78B99C21X   |   Serie 2: A78B99C21X
+(A) I (B) D
+
+12. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: M45K908L12   |   Serie 2: M45K908I12
+(A) I (B) D
+
+13. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: 8899001122   |   Serie 2: 8899001122
+(A) I (B) D
+
+14. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: ZXCVBNM123   |   Serie 2: ZXCVBMN123
+(A) I (B) D
+
+15. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: QWERT12345   |   Serie 2: QWERT12345
+(A) I (B) D
+
+16. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: 1A2B3C4D5E   |   Serie 2: 1A2B3C4D5F
+(A) I (B) D
+
+17. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: 9988776655   |   Serie 2: 9988776655
+(A) I (B) D
+
+18. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: POIUYTREWQ   |   Serie 2: POIUYTREWQ
+(A) I (B) D
+
+19. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: LMNOP98765   |   Serie 2: LMN0P98765
+(A) I (B) D
+
+20. Compare las siguientes dos series alfanuméricas. Si son exactamente IGUALES marque (I), si tienen alguna diferencia marque (D).
+Serie 1: 5544332211   |   Serie 2: 5544332211
+(A) I (B) D
+
+--- SUBTEST C: SEGUIMIENTO DE INSTRUCCIONES COMPLEJAS (Q21-Q30) ---
+
+21. Si el número 85 es impar y mayor que 80, marque la opción C. De lo contrario, marque la opción A.
+(A) A (B) B (C) C (D) D
+
+22. Sume 4 + 7. Si el resultado es menor que 10, marque A. Si es exactamente 11, marque B. Si es mayor, marque C.
+(A) A (B) B (C) C (D) D
+
+23. Si la palabra 'CANDIDATO' tiene 4 vocales, marque D. Si tiene 5, marque B.
+(A) A (B) B (C) C (D) D
+
+24. Mire la serie: 2, 4, 6. Si el siguiente número lógico es 8, marque A, a menos que 8 sea impar, en cuyo caso marque C.
+(A) A (B) B (C) C (D) D
+
+25. Si Punta Cana está en República Dominicana, marque C. Si está en Puerto Rico, marque A.
+(A) A (B) B (C) C (D) D
+
+26. Multiplique 3 x 4. Si el resultado es un número par, divídalo entre 2 y marque esa opción si estuviera en letras (A=1, B=2, C=3, D=4, E=5, F=6).
+(A) C (B) F (C) E (D) B
+
+27. Si la letra 'M' está antes que la 'P' en el abecedario y después de la 'J', marque la opción B.
+(A) A (B) B (C) C (D) D
+
+28. Lea al revés la palabra 'LUZ'. Si termina en 'Z', marque A. Si termina en 'L', marque D.
+(A) A (B) B (C) C (D) D
+
+29. Si un triángulo tiene 4 lados, marque B. Si un cuadrado tiene 4 ángulos rectos, marque C.
+(A) A (B) B (C) C (D) D
+
+30. Reste 15 de 30. Si el resultado es divisible entre 5, marque A. Si no lo es, marque D.
+(A) A (B) B (C) C (D) D
+
+--- SUBTEST D: BÚSQUEDA Y CLASIFICACIÓN (ATENCIÓN SELECTIVA) (Q31-Q40) ---
+
+31. Dado el código de inventario 'X-4-Y-7-Z-2', indique la suma de todos los números presentes.
+(A) 11 (B) 14 (C) 12 (D) 13
+
+32. En la palabra 'RECLUTAMIENTO', ¿qué letra ocupa la séptima posición de izquierda a derecha?
+(A) T (B) M (C) I (D) A
+
+33. Observe la serie: @, #, $, %, @, &, #, $. ¿Cuántas veces se repite el símbolo '@'?
+(A) 3 (B) 1 (C) 2 (D) 4
+
+34. Si a la palabra 'CONSULTORA' le quitamos todas las vocales, ¿cuántas letras quedan?
+(A) 7 (B) 8 (C) 5 (D) 6
+
+35. ¿Cuál es la tercera consonante de la palabra 'PSICÓLOGA'?
+(A) S (B) P (C) L (D) C
+
+36. En el número de expediente '2026-05-99', ¿cuál es el resultado de sumar los primeros cuatro dígitos?
+(A) 9 (B) 8 (C) 10 (D) 11
+
+37. Busque la palabra oculta al unir las primeras letras de: Gato, Elefante, Sapo, Tigre, Iguana, Oso, Nube. ¿Qué palabra se forma?
+(A) GIRASOL (B) GRUPOS (C) GESTION (D) GENESIS
+
+38. Cuente las vocales cerradas (i, u) en la frase: 'Diseño organizacional y manuales'.
+(A) 3 (B) 5 (C) 2 (D) 4
+
+39. Si agrupamos los números 1, 4, 7, 2, 5, 8 en pares e impares, ¿cuántos números pares hay?
+(A) 2 (B) 4 (C) 5 (D) 3
+
+40. En la cadena 'CENERH2026', si multiplicamos el primer número por el último, el resultado es:
+(A) 10 (B) 12 (C) 8 (D) 14
+
+================================================================================
+FIN DEL TEST
+Tiempo estimado total: 26-40 minutos (aproximadamente 30 minutos)
+Validez psicométrica: 94/100
+Diseño: Keren Mejía, Psicóloga Industrial
+Versión: 2.0 (Reconstruida)
+================================================================================

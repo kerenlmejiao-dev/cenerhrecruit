@@ -1,0 +1,91 @@
+ID_Competencia,Competencia,Num_Pregunta,Pregunta,Escala,Scoring
+1,Orientación a Resultados,1,Establezco objetivos claros antes de iniciar un trabajo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+1,Orientación a Resultados,2,Busco alternativas cuando encuentro obstáculos para cumplir una meta.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+1,Orientación a Resultados,3,Mantengo el enfoque hasta terminar las tareas asignadas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+1,Orientación a Resultados,4,Me esfuerzo por superar los resultados esperados.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+1,Orientación a Resultados,5,Evalúo mis resultados para identificar oportunidades de mejora.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+2,Trabajo en Equipo,1,Comparto información útil con mis compañeros.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+2,Trabajo en Equipo,2,Estoy dispuesto a apoyar a otros cuando lo necesitan.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+2,Trabajo en Equipo,3,Escucho y considero las opiniones de los demás.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+2,Trabajo en Equipo,4,Colaboro para resolver conflictos dentro del equipo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+2,Trabajo en Equipo,5,Celebro los logros colectivos más que los individuales.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+3,Comunicación,1,Expreso mis ideas de forma clara y organizada.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+3,Comunicación,2,Adapto mi comunicación según la persona con quien hablo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+3,Comunicación,3,Escucho atentamente antes de responder.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+3,Comunicación,4,Confirmo que mi mensaje haya sido comprendido.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+3,Comunicación,5,Mantengo una comunicación respetuosa incluso en situaciones difíciles.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+4,Adaptabilidad,1,Me ajusto rápidamente a cambios en procedimientos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+4,Adaptabilidad,2,Mantengo una actitud positiva ante nuevas responsabilidades.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+4,Adaptabilidad,3,Aprendo con rapidez nuevas herramientas o tecnologías.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+4,Adaptabilidad,4,Cambio mis prioridades cuando la situación lo requiere.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+4,Adaptabilidad,5,Mantengo un buen desempeño durante los cambios organizacionales.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+5,Responsabilidad,1,Cumplo los plazos establecidos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+5,Responsabilidad,2,Asumo las consecuencias de mis decisiones.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+5,Responsabilidad,3,Completo mis tareas sin necesidad de supervisión constante.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+5,Responsabilidad,4,Organizo mi trabajo para evitar retrasos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+5,Responsabilidad,5,Soy puntual en mis compromisos laborales.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+6,Resolución de Problemas,1,Analizo las causas antes de buscar soluciones.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+6,Resolución de Problemas,2,Considero varias alternativas antes de decidir.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+6,Resolución de Problemas,3,Mantengo la calma frente a problemas inesperados.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+6,Resolución de Problemas,4,Busco información adicional cuando la necesito.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+6,Resolución de Problemas,5,Evalúo la efectividad de las soluciones implementadas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+7,Orientación al Cliente,1,Identifico las necesidades del cliente antes de ofrecer soluciones.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+7,Orientación al Cliente,2,Respondo oportunamente a las solicitudes del cliente.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+7,Orientación al Cliente,3,Busco superar las expectativas del cliente.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+7,Orientación al Cliente,4,Manejo adecuadamente las quejas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+7,Orientación al Cliente,5,Mantengo una actitud amable y profesional.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+8,Organización y Planificación,1,Planifico mis actividades diarias.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+8,Organización y Planificación,2,Establezco prioridades según la importancia de las tareas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+8,Organización y Planificación,3,Utilizo herramientas para organizar mi trabajo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+8,Organización y Planificación,4,Evito dejar tareas importantes para último momento.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+8,Organización y Planificación,5,Cumplo con los cronogramas establecidos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+9,Aprendizaje Continuo,1,Busco oportunidades para aprender nuevas habilidades.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+9,Aprendizaje Continuo,2,Solicito retroalimentación para mejorar.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+9,Aprendizaje Continuo,3,Aplico lo aprendido en mi trabajo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+9,Aprendizaje Continuo,4,Me actualizo sobre tendencias de mi profesión.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+9,Aprendizaje Continuo,5,Comparto conocimientos con otras personas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+10,Ética e Integridad,1,Actúo con honestidad incluso cuando nadie me observa.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+10,Ética e Integridad,2,Respeto la confidencialidad de la información.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+10,Ética e Integridad,3,Cumplo las políticas de la organización.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+10,Ética e Integridad,4,Rechazo conductas poco éticas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+10,Ética e Integridad,5,Admito mis errores cuando los cometo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+11,Innovación,1,Propongo nuevas ideas para mejorar procesos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+11,Innovación,2,Busco formas más eficientes de realizar mi trabajo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+11,Innovación,3,Estoy dispuesto a experimentar nuevas soluciones.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+11,Innovación,4,Analizo tendencias que puedan beneficiar a la organización.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+11,Innovación,5,Promuevo la mejora continua en mi área.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+12,Toma de Decisiones,1,Analizo información antes de decidir.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+12,Toma de Decisiones,2,Considero los riesgos de cada alternativa.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+12,Toma de Decisiones,3,Tomo decisiones oportunamente.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+12,Toma de Decisiones,4,Asumo la responsabilidad de mis decisiones.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+12,Toma de Decisiones,5,Evalúo los resultados obtenidos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+13,Iniciativa,1,Identifico oportunidades de mejora sin que me lo soliciten.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+13,Iniciativa,2,Actúo rápidamente cuando detecto un problema.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+13,Iniciativa,3,Busco nuevas responsabilidades.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+13,Iniciativa,4,Presento propuestas para optimizar procesos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+13,Iniciativa,5,Me anticipo a las necesidades del trabajo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+14,Manejo del Estrés,1,Mantengo la calma bajo presión.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+14,Manejo del Estrés,2,Organizo mis prioridades cuando aumenta la carga laboral.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+14,Manejo del Estrés,3,Evito reaccionar impulsivamente.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+14,Manejo del Estrés,4,Mantengo una actitud positiva en momentos difíciles.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+14,Manejo del Estrés,5,Continúo siendo productivo en situaciones de alta demanda.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+15,Liderazgo,1,Inspiro confianza en otras personas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+15,Liderazgo,2,Delego responsabilidades de manera adecuada.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+15,Liderazgo,3,Motivo al equipo para alcanzar los objetivos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+15,Liderazgo,4,Desarrollo el talento de mis colaboradores.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+15,Liderazgo,5,Tomo decisiones difíciles cuando es necesario.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+16,Negociación,1,Busco acuerdos beneficiosos para ambas partes.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+16,Negociación,2,Escucho los intereses de la otra persona.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+16,Negociación,3,Mantengo una actitud respetuosa durante la negociación.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+16,Negociación,4,Presento argumentos basados en hechos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+16,Negociación,5,Busco relaciones de largo plazo.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+17,Inteligencia Emocional,1,Reconozco mis emociones antes de actuar.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+17,Inteligencia Emocional,2,Comprendo las emociones de otras personas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+17,Inteligencia Emocional,3,Mantengo el autocontrol durante conflictos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+17,Inteligencia Emocional,4,Acepto críticas constructivas.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+17,Inteligencia Emocional,5,Me recupero rápidamente de situaciones difíciles.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+18,Compromiso Organizacional,1,Me siento orgulloso de pertenecer a la organización.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+18,Compromiso Organizacional,2,Doy un esfuerzo adicional cuando es necesario.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+18,Compromiso Organizacional,3,Defiendo la buena imagen de la empresa.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+18,Compromiso Organizacional,4,Cumplo con las normas y procedimientos establecidos.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
+18,Compromiso Organizacional,5,Contribuyo activamente al logro de los objetivos organizacionales.,"Likert 1-5 (Nunca=1, Rara vez=2, Algunas veces=3, Frecuentemente=4, Siempre=5)",Suma por competencia / 25 × 100 = Score 0-100
