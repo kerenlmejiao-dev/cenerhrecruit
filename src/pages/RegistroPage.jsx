@@ -37,6 +37,7 @@ export default function RegistroPage() {
       // Guardar candidato ID en localStorage
       localStorage.setItem('candidatoId', resultado.candidato_id);
       localStorage.setItem('candidatoNombre', resultado.nombre);
+      localStorage.setItem('vacanteId', formData.vacante_id);
 
       // Redirigir a página de tests
       navigate('/tests');
