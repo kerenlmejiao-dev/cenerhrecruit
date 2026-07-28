@@ -242,6 +242,7 @@ def cargar_vacante_ejemplo(session):
         }
     )
     session.add(vacante)
+    session.commit()  # Commit vacante primero para cumplir FK antes de crear peso
     
     # Crear pesos asociados
     peso = PesoVacante(
