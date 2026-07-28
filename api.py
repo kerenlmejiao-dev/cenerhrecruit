@@ -11,11 +11,12 @@ from sqlalchemy.orm import sessionmaker
 from typing import List, Optional
 from models import Base, TestPsicometrico, PreguntaTest, Vacante, Candidato
 import json
+import os
 
 # ============================================================================
 # CONFIG
 # ============================================================================
-DATABASE_URL = "sqlite:///./cenerh_recruit.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./cenerh_recruit.db")
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
