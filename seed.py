@@ -4,6 +4,7 @@ SQLite local (no requiere credenciales)
 """
 
 import json
+import os
 from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -12,7 +13,7 @@ from models import Base, TestPsicometrico, PreguntaTest, Vacante, PesoVacante
 # ============================================================================
 # CONFIG: SQLite local (no requiere credenciales)
 # ============================================================================
-DATABASE_URL = "sqlite:///./cenerh_recruit.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./cenerh_recruit.db")
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -30,7 +31,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de capacidad de comprensión y razonamiento verbal",
         "num_preguntas": 20,
         "tipo": "cognitivo",
-        "calidad": 94.0,
+        "calidad_psicometrica": 94.0,
         "tiempo_estimado": 600,  # 10 min
     },
     {
@@ -39,7 +40,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de razonamiento matemático y análisis numérico",
         "num_preguntas": 40,
         "tipo": "cognitivo",
-        "calidad": 95.0,
+        "calidad_psicometrica": 95.0,
         "tiempo_estimado": 1200,  # 20 min
     },
     {
@@ -48,7 +49,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de los 5 grandes rasgos de personalidad",
         "num_preguntas": 20,
         "tipo": "psicometrico",
-        "calidad": 96.0,
+        "calidad_psicometrica": 96.0,
         "tiempo_estimado": 600,
     },
     {
@@ -57,7 +58,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de competencias emocionales y sociales",
         "num_preguntas": 20,
         "tipo": "psicometrico",
-        "calidad": 95.0,
+        "calidad_psicometrica": 95.0,
         "tiempo_estimado": 600,
     },
     {
@@ -66,7 +67,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de orientación y motivación en entorno laboral",
         "num_preguntas": 20,
         "tipo": "psicometrico",
-        "calidad": 98.0,
+        "calidad_psicometrica": 98.0,
         "tiempo_estimado": 600,
     },
     {
@@ -75,7 +76,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de alineación con valores organizacionales",
         "num_preguntas": 20,
         "tipo": "psicometrico",
-        "calidad": 94.0,
+        "calidad_psicometrica": 94.0,
         "tiempo_estimado": 600,
     },
     {
@@ -84,7 +85,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de potencial y competencias directivas",
         "num_preguntas": 20,
         "tipo": "psicometrico",
-        "calidad": 96.0,
+        "calidad_psicometrica": 96.0,
         "tiempo_estimado": 600,
     },
     {
@@ -93,7 +94,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de 18 competencias clave (90 preguntas)",
         "num_preguntas": 90,
         "tipo": "competencias",
-        "calidad": 99.0,
+        "calidad_psicometrica": 99.0,
         "tiempo_estimado": 1800,  # 30 min
     },
     {
@@ -102,7 +103,7 @@ TESTS_CONFIG = [
         "descripcion": "Evaluación de atención sostenida, velocidad, seguimiento de instrucciones",
         "num_preguntas": 40,
         "tipo": "atencion",
-        "calidad": 94.0,
+        "calidad_psicometrica": 94.0,
         "tiempo_estimado": 1800,  # 30 min
     },
 ]
