@@ -162,6 +162,46 @@ PREGUNTAS_MUESTRA = {
             "dificultad": "media",
         },
     ],
+    "big_five": [
+        {
+            "numero": 1,
+            "pregunta": "Me considero una persona organizada y responsable con mis tareas",
+            "tipo_respuesta": "likert",
+            "opciones": {"1": "Totalmente en desacuerdo", "2": "En desacuerdo", "3": "Neutral", "4": "De acuerdo", "5": "Totalmente de acuerdo"},
+            "respuesta_correcta": "N/A",
+            "dificultad": "facil",
+        },
+    ],
+    "motivacion": [
+        {
+            "numero": 1,
+            "pregunta": "Me siento motivado cuando tengo metas claras y desafiantes en mi trabajo",
+            "tipo_respuesta": "likert",
+            "opciones": {"1": "Totalmente en desacuerdo", "2": "En desacuerdo", "3": "Neutral", "4": "De acuerdo", "5": "Totalmente de acuerdo"},
+            "respuesta_correcta": "N/A",
+            "dificultad": "facil",
+        },
+    ],
+    "valores": [
+        {
+            "numero": 1,
+            "pregunta": "La honestidad y la transparencia son fundamentales en cualquier equipo de trabajo",
+            "tipo_respuesta": "likert",
+            "opciones": {"1": "Totalmente en desacuerdo", "2": "En desacuerdo", "3": "Neutral", "4": "De acuerdo", "5": "Totalmente de acuerdo"},
+            "respuesta_correcta": "N/A",
+            "dificultad": "facil",
+        },
+    ],
+    "liderazgo": [
+        {
+            "numero": 1,
+            "pregunta": "Me resulta natural guiar a otros y tomar decisiones en situaciones de presión",
+            "tipo_respuesta": "likert",
+            "opciones": {"1": "Totalmente en desacuerdo", "2": "En desacuerdo", "3": "Neutral", "4": "De acuerdo", "5": "Totalmente de acuerdo"},
+            "respuesta_correcta": "N/A",
+            "dificultad": "media",
+        },
+    ],
 }
 
 
@@ -199,8 +239,13 @@ def cargar_preguntas(session):
         
         # Cargar preguntas de muestra (en producción serían todas las 300)
         for muestra in muestras:
+            pregunta_id = f"{test_id}_{muestra['numero']}"
+            existing = session.query(PreguntaTest).filter_by(id=pregunta_id).first()
+            if existing:
+                continue
+
             pregunta = PreguntaTest(
-                id=f"{test_id}_{muestra['numero']}",
+                id=pregunta_id,
                 test_id=test_id,
                 numero_pregunta=muestra["numero"],
                 pregunta=muestra["pregunta"],
