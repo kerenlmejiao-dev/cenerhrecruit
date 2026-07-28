@@ -26,6 +26,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://cenerhrecruit-frontend.vercel.app"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+)
+
 # ============================================================================
 # DEPENDENCY: Get DB Session
 # ============================================================================
