@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { testsAPI } from '../services/api';
+import { testsAPI, vacantesAPI } from '../services/api';
 
 export default function TestsPage() {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export default function TestsPage() {
 
   const candidatoId = localStorage.getItem('candidatoId');
   const candidatoNombre = localStorage.getItem('candidatoNombre');
+  const vacanteId = localStorage.getItem('vacanteId');
 
   useEffect(() => {
     if (!candidatoId) {
@@ -32,11 +33,28 @@ export default function TestsPage() {
 
   const cargarTests = async () => {
     try {
-      const data = await testsAPI.obtenerDisponibles();
-      setTests(data.tests);
+      const datos = await testsAPI.obtenerDisponibles();
+      let testsFiltrados = datos.tests;
 
-      if (data.tests.length > 0) {
-        await cargarPreguntas(data.tests[0].id);
+      if (vacanteId) {
+        try {
+          const config = await vacantesAPI.obtenerConfig(vacanteId);
+          const testsAAplicar = config.tests_a_aplicar || [];
+
+          if (testsAAplicar.length > 0) {
+            testsFiltrados = testsAAplicar
+              .map(testId => datos.tests.find(t => t.id === testId))
+              .filter(Boolean);
+          }
+        } catch (errConfig) {
+          console.error('Error cargando configuracion de vacante:', errConfig);
+        }
+      }
+
+      setTests(testsFiltrados);
+
+      if (testsFiltrados.length > 0) {
+        await cargarPreguntas(testsFiltrados[0].id);
       }
     } catch (err) {
       setError('Error al cargar tests');
