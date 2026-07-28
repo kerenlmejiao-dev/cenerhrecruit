@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from typing import List, Optional
-from models import Base, TestPsicometrico, PreguntaTest, Vacante, Candidato
+from models import Base, TestPsicometrico, PreguntaTest, Vacante, Candidato, RespuestaCandidata, ScoreCandidata
 import json
 import os
 
