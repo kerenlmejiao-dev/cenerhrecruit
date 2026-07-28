@@ -219,43 +219,66 @@ def cargar_preguntas(session):
 
 
 def cargar_vacante_ejemplo(session):
-    """Cargar una vacante de ejemplo"""
-    print("🎯 Cargando vacante de ejemplo...")
-    
-    # Verificar si ya existe
-    existing = session.query(Vacante).filter_by(id="contador_paraiso").first()
-    if existing:
-        print("  ✓ Vacante ya existe")
-        return
-    
-    # Crear vacante
-    vacante = Vacante(
-        id="contador_paraiso",
-        nombre="Contador General",
-        cliente="Paraíso Punta Cana",
-        descripcion="Búsqueda de Contador General para Paraíso Punta Cana",
-        tests_a_aplicar=["verbal", "numerico", "competencias", "ie", "motivacion"],
-        pesos_scoring={
-            "competencias": 0.35,
-            "psicometricos": 0.35,
-            "cognitivos": 0.30,
-        }
-    )
-    session.add(vacante)
-    session.commit()  # Commit vacante primero para cumplir FK antes de crear peso
-    
-    # Crear pesos asociados
-    peso = PesoVacante(
-        id="peso_contador_paraiso",
-        vacante_id="contador_paraiso",
-        peso_competencias=0.35,
-        peso_psicometricos=0.35,
-        peso_cognitivos=0.30,
-    )
-    session.add(peso)
-    
-    session.commit()
-    print("✅ Vacante de ejemplo cargada\n")
+    """Cargar vacantes de ejemplo"""
+    print("🎯 Cargando vacantes de ejemplo...")
+
+    vacantes_data = [
+        {
+            "id": "contador_paraiso",
+            "nombre": "Contador General",
+            "cliente": "Paraíso Punta Cana",
+            "descripcion": "Búsqueda de Contador General para Paraíso Punta Cana",
+            "tests_a_aplicar": ["verbal", "numerico", "competencias", "ie", "motivacion"],
+        },
+        {
+            "id": "ingeniero_procesos",
+            "nombre": "Ingeniero de Procesos",
+            "cliente": "CENERH",
+            "descripcion": "Búsqueda de Ingeniero de Procesos para CENERH",
+            "tests_a_aplicar": ["numerico", "atencion", "competencias", "big_five", "ie"],
+        },
+        {
+            "id": "gerente_operativo",
+            "nombre": "Gerente Operativo",
+            "cliente": "CENERH",
+            "descripcion": "Búsqueda de Gerente Operativo para CENERH",
+            "tests_a_aplicar": ["verbal", "liderazgo", "competencias", "motivacion", "valores"],
+        },
+    ]
+
+    for data in vacantes_data:
+        existing = session.query(Vacante).filter_by(id=data["id"]).first()
+        if existing:
+            print(f"  ✓ Vacante {data['id']} ya existe")
+            continue
+
+        vacante = Vacante(
+            id=data["id"],
+            nombre=data["nombre"],
+            cliente=data["cliente"],
+            descripcion=data["descripcion"],
+            tests_a_aplicar=data["tests_a_aplicar"],
+            pesos_scoring={
+                "competencias": 0.35,
+                "psicometricos": 0.35,
+                "cognitivos": 0.30,
+            }
+        )
+        session.add(vacante)
+        session.commit()  # Commit vacante primero para cumplir FK antes de crear peso
+
+        peso = PesoVacante(
+            id=f"peso_{data['id']}",
+            vacante_id=data["id"],
+            peso_competencias=0.35,
+            peso_psicometricos=0.35,
+            peso_cognitivos=0.30,
+        )
+        session.add(peso)
+        session.commit()
+        print(f"✅ Vacante {data['id']} cargada")
+
+    print()
 
 
 def main():
@@ -277,7 +300,7 @@ def main():
         print("\nBD: cenerh_recruit.db")
         print("Tests: 9 cargados")
         print("Preguntas: 300 listas (muestra cargada)")
-        print("Vacante: 1 de ejemplo")
+        print("Vacantes: 3 de ejemplo")
         print("\n✨ Listo para empezar")
         
     except Exception as e:
