@@ -221,17 +221,11 @@ export const candidatosAPI = {
     return response.data;
   },
 
-  // Generar y descargar el PDF real de la ficha
+  // Generar y descargar el PDF real de la ficha (solo reclutador/owner -- ver reclutador_router.py)
   generarPDF: async (candidatoId) => {
     const response = await apiClient.get(`/api/candidatos/${candidatoId}/ficha.pdf`, {
       responseType: 'blob',
     });
-    return response.data;
-  },
-
-  // Enviar email
-  enviarEmail: async (candidatoId) => {
-    const response = await apiClient.post(`/api/candidatos/${candidatoId}/email`);
     return response.data;
   },
 };

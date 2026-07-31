@@ -3,7 +3,8 @@
  * Gestión de rutas y componentes
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import RegistroPage from './pages/RegistroPage';
 import PerfilPage from './pages/PerfilPage';
 import TestsPage from './pages/TestsPage';
@@ -24,9 +25,20 @@ import DashboardEmpresa from './pages/empresa/DashboardEmpresa';
 import VacanteDetalleEmpresa from './pages/empresa/VacanteDetalleEmpresa';
 import PagoResultadoPage from './pages/PagoResultadoPage';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Candidatos */}
         <Route path="/" element={<RegistroPage modo="normal" />} />

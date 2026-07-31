@@ -27,6 +27,11 @@ export default function AssessmentsPage() {
     cargarAssessments();
   }, []);
 
+  // Al cambiar de escenario (sin cambiar de ruta) volver siempre al inicio.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [indiceActual]);
+
   const cargarAssessments = async () => {
     try {
       const data = await assessmentAPI.listar(candidatoId);

@@ -1,10 +1,13 @@
 /**
  * CENERH RECRUIT OS - Página de Resultados
- * Donde candidatos ven sus scores y descargan PDF
+ *
+ * El candidato NUNCA ve su score, clasificación ni desglose por test/categoría
+ * -- esa información es solo para el reclutador (ver CandidatoAssessments.jsx).
+ * Aquí solo se muestra en qué etapa va su proceso de reclutamiento.
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { candidatosAPI } from '../services/api';
 
 const ETAPAS_PROCESO = ['Aplicación recibida', 'En evaluación', 'Preseleccionado', 'Entrevista', 'Decisión final'];
@@ -65,7 +68,6 @@ export default function ResultadosPage() {
   const [datos, setDatos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [enviando, setEnviando] = useState(false);
 
   const candidatoId = localStorage.getItem('candidatoId');
   const candidatoNombre = localStorage.getItem('candidatoNombre');
@@ -88,18 +90,6 @@ export default function ResultadosPage() {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const enviarEmail = async () => {
-    try {
-      setEnviando(true);
-      const resultado = await candidatosAPI.enviarEmail(candidatoId);
-      alert(`Email enviado a ${resultado.email}`);
-    } catch (err) {
-      alert('Error al enviar email');
-    } finally {
-      setEnviando(false);
     }
   };
 
@@ -130,15 +120,6 @@ export default function ResultadosPage() {
     );
   }
 
-  const scoreClasificacion = (score) => {
-    if (score >= 81) return { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-700', label: 'PRIORITARIO ⭐⭐⭐' };
-    if (score >= 61) return { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-700', label: 'VIABLE ⭐⭐' };
-    if (score >= 41) return { bg: 'bg-yellow-100', border: 'border-yellow-300', text: 'text-yellow-700', label: 'CONSIDERAR ⭐' };
-    return { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700', label: 'NO RECOMENDADO' };
-  };
-
-  const clasificacion = scoreClasificacion(datos.score_final);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -150,96 +131,8 @@ export default function ResultadosPage() {
 
         <StatusReclutamiento status={datos.status_reclutamiento} />
 
-        {/* Score Final */}
-        <div className={`${clasificacion.bg} ${clasificacion.border} border-2 rounded-lg shadow-xl p-8 mb-8`}>
-          <div className="text-center">
-            <p className={`text-sm font-semibold ${clasificacion.text} mb-2`}>SCORE FINAL</p>
-            <div className="text-6xl font-bold text-gray-900 mb-2">{datos.score_final}</div>
-            <p className={`text-xl font-bold ${clasificacion.text}`}>{clasificacion.label}</p>
-          </div>
-        </div>
-
-        {/* Scores por Test */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {datos.scores_por_test && datos.scores_por_test.map((score) => {
-            const class_info = scoreClasificacion(score.score);
-            return (
-              <div
-                key={score.test_id}
-                className={`${class_info.bg} ${class_info.border} border rounded-lg p-6`}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-gray-900">{score.test_nombre}</h3>
-                    <p className={`text-sm ${class_info.text}`}>{score.clasificacion}</p>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{score.score}</div>
-                </div>
-                <div className="w-full bg-gray-300 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full bg-gradient-to-r from-blue-500 to-green-500`}
-                    style={{ width: `${(score.score / 100) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Promedios por Categoría */}
-        {datos.promedios && (
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Desempeño por Categoría</h2>
-            <div className="space-y-4">
-              {Object.entries(datos.promedios).map(([categoria, promedio]) => {
-                const nombreCategoria = {
-                  competencias: 'Competencias Laborales',
-                  psicometricos: 'Evaluación Psicométrica',
-                  cognitivos: 'Habilidades Cognitivas',
-                }[categoria] || categoria;
-
-                return (
-                  <div key={categoria}>
-                    <div className="flex justify-between mb-2">
-                      <span className="font-semibold text-gray-700">{nombreCategoria}</span>
-                      <span className="font-bold text-blue-600">{promedio}/100</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div
-                        className="h-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
-                        style={{ width: `${(promedio / 100) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Assessment Centers */}
-        {datos.assessments && datos.assessments.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Assessment Centers</h2>
-            <div className="space-y-4">
-              {datos.assessments.map((a) => (
-                <div key={a.assessment_id} className="border border-purple-200 bg-purple-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-gray-900">{a.nombre}</h3>
-                    <div className="text-2xl font-bold text-purple-700">{a.score}</div>
-                  </div>
-                  {a.feedback && <p className="text-sm text-gray-700">{a.feedback}</p>}
-                </div>
-              ))}
-            </div>
-            <Link to="/como-usamos-la-ia" target="_blank" className="text-xs text-purple-700 hover:text-purple-900 underline mt-3 inline-block">
-              Cómo la IA analizó tu respuesta
-            </Link>
-          </div>
-        )}
-
         {/* Acciones */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="mb-8">
           <button
             onClick={() => navigate('/perfil?retorno=resultados')}
             className="bg-white hover:bg-gray-50 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2"
@@ -247,22 +140,14 @@ export default function ResultadosPage() {
             <span>✏️</span>
             Corregir o actualizar mis datos
           </button>
-
-          <button
-            onClick={enviarEmail}
-            disabled={enviando}
-            className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <span>📧</span>
-            {enviando ? 'Enviando...' : 'Enviar por Email'}
-          </button>
         </div>
 
         {/* Info */}
         <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded">
           <p className="text-blue-900 font-semibold mb-2">¿Qué sucede ahora?</p>
           <p className="text-blue-800 text-sm">
-            Tu evaluación ha sido completada. CENERH Consulting analizará tus resultados y se comunicará contigo en los próximos 3 días hábiles con retroalimentación personalizada.
+            Tu proceso de evaluación ha finalizado. Toda la información ha sido entregada a tu
+            reclutador, quien la revisará y se comunicará contigo con los siguientes pasos.
           </p>
         </div>
       </div>

@@ -31,6 +31,12 @@ export default function TestsPage() {
     cargarTests();
   }, []);
 
+  // Al cambiar de test (sin cambiar de ruta) volver siempre al inicio de la
+  // página, para que la primera pregunta del test nuevo sea lo primero visible.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [testActual]);
+
   const cargarTests = async () => {
     try {
       const datos = await testsAPI.obtenerDisponibles();

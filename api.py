@@ -482,14 +482,13 @@ async def obtener_resultados(
         candidato.fecha_completitud = candidato.fecha_completitud or datetime.utcnow()
         db.commit()
 
+        # El candidato nunca ve su score, clasificación ni desglose -- eso es
+        # solo para el reclutador (ver /api/reclutador/candidatos/{id}/assessments
+        # en reclutador_router.py). Esta respuesta pública solo confirma que el
+        # proceso de evaluación terminó y en qué etapa de reclutamiento va.
         return {
             "status": "success",
             "candidato_id": candidato_id,
-            "score_final": score_final,
-            "clasificacion_final": clasificacion_final,
-            "scores_por_test": scores_detalle,
-            "promedios": promedios,
-            "assessments": assessments_detalle,
             "status_reclutamiento": candidato.status_reclutamiento,
         }
 
@@ -614,47 +613,11 @@ async def generar_ficha_pdf(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/candidatos/{candidato_id}/email")
-async def enviar_email_candidato(
-    candidato_id: str,
-    db: Session = Depends(get_db)
-):
-    """Generar PDF y enviar por email automáticamente"""
-    try:
-        from pdf_generator import GeneradorPDF
-        from email_sender import EnviadorEmail
-        
-        candidato = db.query(Candidato).filter_by(id=candidato_id).first()
-        if not candidato:
-            raise HTTPException(status_code=404, detail=f"Candidato '{candidato_id}' no encontrado")
-        
-        # Generar PDF
-        pdf_bytes = GeneradorPDF.generar_ficha_candidato(db, candidato_id)
-        
-        # Enviar email
-        resultado_email = EnviadorEmail.enviar_ficha_candidato(
-            email_destinatario=candidato.email,
-            nombre_candidato=candidato.nombre,
-            pdf_bytes=pdf_bytes,
-            vacante_id=candidato.vacante_id,
-        )
-        
-        if resultado_email["status"] == "success":
-            return {
-                "status": "success",
-                "candidato_id": candidato_id,
-                "nombre": candidato.nombre,
-                "email": candidato.email,
-                "mensaje": f"Ficha PDF enviada a {candidato.email}",
-                "modo_envio": resultado_email.get("modo", "producción"),
-            }
-        else:
-            raise HTTPException(status_code=500, detail=resultado_email["mensaje"])
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# NOTA: existió aquí un endpoint público POST /api/candidatos/{id}/email que
+# generaba la ficha PDF (con score y clasificación) y la enviaba por correo
+# directamente al candidato. Se eliminó: el candidato no debe recibir sus
+# resultados por ningún medio, ni en pantalla ni por email -- esa información
+# es solo para el reclutador.
 
 
 @app.get("/api/info")
