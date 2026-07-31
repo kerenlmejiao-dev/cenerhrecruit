@@ -28,6 +28,7 @@ from models import (
     Candidato,
     CandidatoPerfil,
     PreguntaTest,
+    Referencia,
     RespuestaCandidata,
     ScoreCandidata,
     TestPsicometrico,
@@ -683,6 +684,56 @@ async def generar_ficha_pdf(
 # directamente al candidato. Se eliminó: el candidato no debe recibir sus
 # resultados por ningún medio, ni en pantalla ni por email -- esa información
 # es solo para el reclutador.
+
+
+# ============================================================================
+# VERIFICACIÓN DE REFERENCIAS - formulario público (token-based, sin login)
+#
+# El token es la capacidad de acceso, igual que candidato_id en el resto del
+# flujo del candidato: quien tiene el link puede responder, nadie más.
+# ============================================================================
+class RespuestaReferenciaPayload(BaseModel):
+    calificacion_general: int = Field(..., ge=1, le=5)
+    recontrataria: bool
+    comentarios: Optional[str] = Field(default=None, max_length=2000)
+
+
+@app.get("/api/referencias/{token}")
+async def obtener_referencia(token: str, db: Session = Depends(get_db)):
+    """Contexto mínimo para mostrar el formulario: a quién de referencia y
+    sobre qué candidato -- nunca datos sensibles del candidato (cédula,
+    salario, dirección, etc.)."""
+    referencia = db.query(Referencia).filter_by(token=token).first()
+    if not referencia:
+        raise HTTPException(status_code=404, detail="Este link no es válido")
+
+    candidato = db.query(Candidato).filter_by(id=referencia.candidato_id).first()
+    return {
+        "nombre_referencia": referencia.nombre,
+        "nombre_candidato": candidato.nombre if candidato else "el candidato",
+        "ya_respondida": referencia.respondido_en is not None,
+    }
+
+
+@app.post("/api/referencias/{token}/responder")
+async def responder_referencia(
+    token: str,
+    payload: RespuestaReferenciaPayload,
+    db: Session = Depends(get_db),
+):
+    referencia = db.query(Referencia).filter_by(token=token).first()
+    if not referencia:
+        raise HTTPException(status_code=404, detail="Este link no es válido")
+    if referencia.respondido_en is not None:
+        raise HTTPException(status_code=400, detail="Esta referencia ya fue respondida")
+
+    referencia.calificacion_general = payload.calificacion_general
+    referencia.recontrataria = payload.recontrataria
+    referencia.comentarios = payload.comentarios
+    referencia.respondido_en = datetime.utcnow()
+    db.commit()
+
+    return {"status": "success"}
 
 
 @app.get("/api/info")

@@ -16,10 +16,12 @@ export default function CandidatoAssessments() {
   const navigate = useNavigate();
   const [assessments, setAssessments] = useState(null);
   const [compatibilidad, setCompatibilidad] = useState(null);
+  const [referencias, setReferencias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [requiereSuscripcion, setRequiereSuscripcion] = useState(false);
   const [marcando, setMarcando] = useState(null);
+  const [enviandoReferencia, setEnviandoReferencia] = useState(null);
 
   useEffect(() => {
     cargar();
@@ -30,9 +32,13 @@ export default function CandidatoAssessments() {
     setError('');
     setRequiereSuscripcion(false);
     try {
-      const data = await reclutadorAPI.assessmentsCandidato(candidatoId);
+      const [data, datosReferencias] = await Promise.all([
+        reclutadorAPI.assessmentsCandidato(candidatoId),
+        reclutadorAPI.referenciasCandidato(candidatoId),
+      ]);
       setAssessments(data.assessments);
       setCompatibilidad(data.compatibilidad);
+      setReferencias(datosReferencias.referencias || []);
     } catch (err) {
       if (err.response?.status === 402) {
         setRequiereSuscripcion(true);
@@ -44,6 +50,19 @@ export default function CandidatoAssessments() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const enviarReferencia = async (referenciaId) => {
+    setEnviandoReferencia(referenciaId);
+    try {
+      await reclutadorAPI.enviarSolicitudReferencia(candidatoId, referenciaId);
+      setReferencias(prev => prev.map(r => r.id === referenciaId ? { ...r, enviado_en: new Date().toISOString() } : r));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudo enviar la solicitud de referencia.');
+      console.error(err);
+    } finally {
+      setEnviandoReferencia(null);
     }
   };
 
@@ -192,6 +211,48 @@ export default function CandidatoAssessments() {
                 className="bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-900 transition disabled:opacity-50"
               >
                 {marcando === a.assessment_id ? 'Marcando...' : 'Marcar como revisado'}
+              </button>
+            )}
+          </div>
+        ))}
+
+        <h2 className="text-lg font-bold text-gray-900 pt-4">Verificación de referencias</h2>
+
+        {referencias.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+            Este candidato no cargó referencias laborales.
+          </div>
+        )}
+
+        {referencias.map(ref => (
+          <div key={ref.id} className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <div>
+                <h3 className="font-semibold text-gray-900">{ref.nombre}</h3>
+                <p className="text-gray-500 text-sm">{ref.relacion || 'Relación no especificada'} · {ref.email || 'sin email'} {ref.telefono ? `· ${ref.telefono}` : ''}</p>
+              </div>
+              {ref.respondido_en ? (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Respondida</span>
+              ) : ref.enviado_en ? (
+                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Enviada, esperando</span>
+              ) : (
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Sin enviar</span>
+              )}
+            </div>
+
+            {ref.respondido_en ? (
+              <div className="mt-3 bg-blue-50 rounded p-3 text-sm">
+                <p><strong>Calificación general:</strong> {ref.calificacion_general}/5</p>
+                <p><strong>¿La recontrataría?:</strong> {ref.recontrataria ? 'Sí' : 'No'}</p>
+                {ref.comentarios && <p className="mt-1"><strong>Comentarios:</strong> {ref.comentarios}</p>}
+              </div>
+            ) : (
+              <button
+                onClick={() => enviarReferencia(ref.id)}
+                disabled={!ref.email || enviandoReferencia === ref.id}
+                className="mt-2 bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-900 transition disabled:opacity-50"
+              >
+                {enviandoReferencia === ref.id ? 'Enviando...' : ref.enviado_en ? 'Reenviar solicitud' : 'Enviar solicitud de referencia'}
               </button>
             )}
           </div>

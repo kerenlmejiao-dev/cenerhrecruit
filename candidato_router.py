@@ -9,10 +9,10 @@ login, candidato_id como token de capacidad (ver api.py).
 import os
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 import cv_parser_service
@@ -22,6 +22,7 @@ from models import (
     AssessmentRespuesta,
     Candidato,
     CandidatoPerfil,
+    Referencia,
     Vacante,
     VacanteAssessment,
 )
@@ -115,6 +116,57 @@ def guardar_cuestionario(
     for campo, valor in payload.model_dump(exclude_unset=True).items():
         setattr(perfil, campo, valor)
 
+    db.commit()
+    return {"status": "success", "candidato_id": candidato_id}
+
+
+class ReferenciaPayload(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=150)
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    relacion: Optional[str] = None
+
+
+@router.get("/{candidato_id}/referencias")
+def listar_referencias_candidato(candidato_id: str, db: Session = Depends(get_db)):
+    """Las referencias que el propio candidato ya cargó, para poder verlas
+    al volver a corregir su perfil."""
+    referencias = db.query(Referencia).filter_by(candidato_id=candidato_id).order_by(Referencia.id).all()
+    return {
+        "referencias": [
+            {"id": r.id, "nombre": r.nombre, "telefono": r.telefono, "email": r.email, "relacion": r.relacion}
+            for r in referencias
+        ]
+    }
+
+
+@router.post("/{candidato_id}/referencias")
+def guardar_referencias_candidato(
+    candidato_id: str,
+    payload: List[ReferenciaPayload],
+    db: Session = Depends(get_db),
+):
+    """Reemplaza la lista de referencias del candidato (máximo 3) por la que
+    envía ahora -- simple de razonar tanto si es la primera vez como si está
+    corrigiendo su perfil."""
+    candidato = db.query(Candidato).filter_by(id=candidato_id).first()
+    if not candidato:
+        raise HTTPException(status_code=404, detail=f"Candidato '{candidato_id}' no encontrado")
+    if len(payload) > 3:
+        raise HTTPException(status_code=400, detail="Máximo 3 referencias")
+
+    db.query(Referencia).filter_by(candidato_id=candidato_id).delete()
+    for item in payload:
+        if not item.nombre.strip():
+            continue
+        db.add(Referencia(
+            candidato_id=candidato_id,
+            nombre=item.nombre.strip(),
+            telefono=item.telefono,
+            email=item.email,
+            relacion=item.relacion,
+            token=uuid.uuid4().hex,
+        ))
     db.commit()
     return {"status": "success", "candidato_id": candidato_id}
 

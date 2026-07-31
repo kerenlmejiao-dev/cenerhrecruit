@@ -518,6 +518,39 @@ class CandidatoAcceso(Base):
 
 
 # ============================================================================
+# TABLA: Referencias laborales (verificación de referencias)
+#
+# El candidato aporta contactos de referencias (ex-jefes, colegas). El
+# reclutador dispara un formulario corto por email a cada referencia -- el
+# "token" es la capacidad de acceso al formulario público, igual que
+# candidato_id funciona como capacidad para el flujo del candidato.
+# ============================================================================
+class Referencia(Base):
+    __tablename__ = "referencias"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=False)
+    nombre = Column(String(150), nullable=False)
+    telefono = Column(String(30), nullable=True)
+    email = Column(String(150), nullable=True)
+    relacion = Column(String(100), nullable=True)  # "Supervisor directo", "Compañero de trabajo", etc.
+    token = Column(String(64), unique=True, nullable=False)
+
+    enviado_en = Column(DateTime, nullable=True)
+    respondido_en = Column(DateTime, nullable=True)
+    calificacion_general = Column(Integer, nullable=True)  # 1-5
+    recontrataria = Column(Boolean, nullable=True)
+    comentarios = Column(Text, nullable=True)
+
+    creado_en = Column(DateTime, default=datetime.utcnow)
+
+    candidato = relationship("Candidato")
+
+    def __repr__(self):
+        return f"<Referencia {self.nombre} candidato={self.candidato_id} respondido={self.respondido_en is not None}>"
+
+
+# ============================================================================
 # SUMA DE MODELOS
 # ============================================================================
 """

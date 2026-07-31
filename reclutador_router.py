@@ -5,6 +5,7 @@ Crear vacantes seleccionando tests/assessments del banco, ver candidatos
 postulados y sus fichas. Protegido con JWT (rol owner o reclutador).
 """
 
+import os
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -25,6 +26,7 @@ from models import (
     Candidato,
     CandidatoPerfil,
     Empresa,
+    Referencia,
     ScoreCandidata,
     TestPsicometrico,
     Usuario,
@@ -523,3 +525,76 @@ def marcar_assessment_revisado(
     db.commit()
 
     return {"status": "success", "candidato_id": candidato_id, "assessment_id": assessment_id, "revisado_por_humano": True}
+
+
+# ============================================================================
+# VERIFICACIÓN DE REFERENCIAS
+#
+# El candidato carga sus referencias al completar el perfil (ver
+# candidato_router.py). Aquí el reclutador dispara el correo con el link al
+# formulario público (token-based, ver /api/referencias/{token} en api.py) y
+# revisa las respuestas ya recibidas.
+# ============================================================================
+@router.get("/candidatos/{candidato_id}/referencias")
+def listar_referencias_reclutador(
+    candidato_id: str,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("owner", "reclutador")),
+):
+    _validar_propietario_candidato(db, candidato_id, usuario)
+
+    referencias = db.query(Referencia).filter_by(candidato_id=candidato_id).order_by(Referencia.id).all()
+    return {
+        "referencias": [
+            {
+                "id": r.id,
+                "nombre": r.nombre,
+                "telefono": r.telefono,
+                "email": r.email,
+                "relacion": r.relacion,
+                "enviado_en": r.enviado_en.isoformat() if r.enviado_en else None,
+                "respondido_en": r.respondido_en.isoformat() if r.respondido_en else None,
+                "calificacion_general": r.calificacion_general,
+                "recontrataria": r.recontrataria,
+                "comentarios": r.comentarios,
+            }
+            for r in referencias
+        ]
+    }
+
+
+@router.post("/candidatos/{candidato_id}/referencias/{referencia_id}/enviar")
+def enviar_solicitud_referencia(
+    candidato_id: str,
+    referencia_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("owner", "reclutador")),
+):
+    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
+
+    referencia = db.query(Referencia).filter_by(id=referencia_id, candidato_id=candidato_id).first()
+    if not referencia:
+        raise HTTPException(status_code=404, detail="Referencia no encontrada")
+    if not referencia.email:
+        raise HTTPException(status_code=400, detail="Esta referencia no tiene email registrado")
+
+    from datetime import datetime as _datetime
+
+    from email_sender import EnviadorEmail
+
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    link_formulario = f"{frontend_url}/referencia/{referencia.token}"
+
+    resultado = EnviadorEmail.enviar_solicitud_referencia(
+        email_destinatario=referencia.email,
+        nombre_referencia=referencia.nombre,
+        nombre_candidato=candidato.nombre,
+        link_formulario=link_formulario,
+    )
+    if resultado["status"] != "success":
+        raise HTTPException(status_code=500, detail=resultado["mensaje"])
+
+    referencia.enviado_en = _datetime.utcnow()
+    db.commit()
+
+    return {"status": "success", "referencia_id": referencia_id, "modo_envio": resultado.get("modo")}

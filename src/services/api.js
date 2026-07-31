@@ -164,6 +164,16 @@ export const reclutadorAPI = {
     const match = disposition.match(/filename="?([^"]+)"?/);
     return { blob: response.data, filename: match ? match[1] : `CV_${candidatoId}` };
   },
+
+  referenciasCandidato: async (candidatoId) => {
+    const response = await apiClient.get(`/api/reclutador/candidatos/${candidatoId}/referencias`);
+    return response.data;
+  },
+
+  enviarSolicitudReferencia: async (candidatoId, referenciaId) => {
+    const response = await apiClient.post(`/api/reclutador/candidatos/${candidatoId}/referencias/${referenciaId}/enviar`);
+    return response.data;
+  },
 };
 
 /**
@@ -308,6 +318,31 @@ export const perfilAPI = {
     const response = await apiClient.post(`/api/candidatos/${candidatoId}/cv`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return response.data;
+  },
+
+  obtenerReferencias: async (candidatoId) => {
+    const response = await apiClient.get(`/api/candidatos/${candidatoId}/referencias`);
+    return response.data;
+  },
+
+  guardarReferencias: async (candidatoId, referencias) => {
+    const response = await apiClient.post(`/api/candidatos/${candidatoId}/referencias`, referencias);
+    return response.data;
+  },
+};
+
+/**
+ * REFERENCIAS - formulario público (token-based, sin login)
+ */
+export const referenciasAPI = {
+  obtener: async (token) => {
+    const response = await apiClient.get(`/api/referencias/${token}`);
+    return response.data;
+  },
+
+  responder: async (token, datos) => {
+    const response = await apiClient.post(`/api/referencias/${token}/responder`, datos);
     return response.data;
   },
 };

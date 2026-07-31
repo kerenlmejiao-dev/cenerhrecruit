@@ -88,6 +88,7 @@ export default function PerfilPage() {
   const [cvExistente, setCvExistente] = useState('');
   const [analizandoCV, setAnalizandoCV] = useState(false);
   const [camposDetectados, setCamposDetectados] = useState(false);
+  const [referencias, setReferencias] = useState([]);
 
   const candidatoId = localStorage.getItem('candidatoId');
 
@@ -112,8 +113,29 @@ export default function PerfilPage() {
       } catch (err) {
         console.error('No se pudo precargar el perfil existente:', err);
       }
+      try {
+        const data = await perfilAPI.obtenerReferencias(candidatoId);
+        if (data.referencias && data.referencias.length > 0) {
+          setReferencias(data.referencias.map(r => ({ nombre: r.nombre, telefono: r.telefono || '', email: r.email || '', relacion: r.relacion || '' })));
+        }
+      } catch (err) {
+        console.error('No se pudieron precargar las referencias:', err);
+      }
     })();
   }, [candidatoId]);
+
+  const handleReferenciaChange = (index, campo, valor) => {
+    setReferencias(prev => prev.map((r, i) => i === index ? { ...r, [campo]: valor } : r));
+  };
+
+  const agregarReferencia = () => {
+    if (referencias.length >= 3) return;
+    setReferencias(prev => [...prev, { nombre: '', telefono: '', email: '', relacion: '' }]);
+  };
+
+  const quitarReferencia = (index) => {
+    setReferencias(prev => prev.filter((_, i) => i !== index));
+  };
 
   if (!candidatoId) {
     navigate('/');
@@ -171,6 +193,12 @@ export default function PerfilPage() {
         anos_experiencia: formData.anos_experiencia ? parseInt(formData.anos_experiencia, 10) : null,
       };
       await perfilAPI.guardarCuestionario(candidatoId, payload);
+
+      // El backend reemplaza la lista completa de referencias -- mandamos
+      // siempre el estado actual, incluso vacío si el candidato las quitó todas.
+      const referenciasValidas = referencias.filter(r => r.nombre.trim());
+      await perfilAPI.guardarReferencias(candidatoId, referenciasValidas);
+
       if (esBolsaTalento) {
         setGuardadoBolsa(true);
       } else {
@@ -342,6 +370,46 @@ export default function PerfilPage() {
                   </p>
                 )}
               </Campo>
+
+              <SeccionTitulo>Referencias laborales (opcional)</SeccionTitulo>
+              <p className="text-xs text-[#666] -mt-2">
+                Ex-jefes o colegas que puedan opinar sobre tu desempeño. Les enviaremos un formulario corto por email
+                solo si el reclutador decide contactarlos.
+              </p>
+              {referencias.map((ref, i) => (
+                <div key={i} className="border border-[#2a2a2a] p-4 space-y-3 relative">
+                  <button
+                    type="button"
+                    onClick={() => quitarReferencia(i)}
+                    className="absolute top-2 right-2 text-[#666] hover:text-[#D62828] text-xs"
+                  >
+                    Quitar
+                  </button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Campo label="Nombre">
+                      <input type="text" value={ref.nombre} onChange={(e) => handleReferenciaChange(i, 'nombre', e.target.value)} className={inputClass} />
+                    </Campo>
+                    <Campo label="Relación">
+                      <input type="text" value={ref.relacion} onChange={(e) => handleReferenciaChange(i, 'relacion', e.target.value)} className={inputClass} placeholder="Ej: Supervisor directo" />
+                    </Campo>
+                    <Campo label="Teléfono">
+                      <input type="tel" value={ref.telefono} onChange={(e) => handleReferenciaChange(i, 'telefono', e.target.value)} className={inputClass} />
+                    </Campo>
+                    <Campo label="Email">
+                      <input type="email" value={ref.email} onChange={(e) => handleReferenciaChange(i, 'email', e.target.value)} className={inputClass} />
+                    </Campo>
+                  </div>
+                </div>
+              ))}
+              {referencias.length < 3 && (
+                <button
+                  type="button"
+                  onClick={agregarReferencia}
+                  className="text-sm text-[#C9A14A] hover:text-white border border-[#2a2a2a] hover:border-[#C9A14A] px-4 py-2 transition"
+                >
+                  + Agregar referencia
+                </button>
+              )}
 
               <button
                 type="submit"

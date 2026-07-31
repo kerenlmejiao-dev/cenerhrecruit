@@ -147,6 +147,77 @@ class EnviadorEmail:
                 "mensaje": str(e),
             }
 
+    @staticmethod
+    def enviar_solicitud_referencia(
+        email_destinatario: str,
+        nombre_referencia: str,
+        nombre_candidato: str,
+        link_formulario: str,
+    ) -> dict:
+        """Envía a una referencia laboral el link a un formulario corto para
+        opinar sobre un candidato. El link ya incluye el token -- no requiere
+        que la referencia tenga cuenta ni inicie sesión."""
+        try:
+            mensaje = MIMEMultipart()
+            mensaje["From"] = f"{EnviadorEmail.REMITENTE_NAME} <{EnviadorEmail.REMITENTE_EMAIL}>"
+            mensaje["To"] = email_destinatario
+            mensaje["Subject"] = f"Verificación de referencia laboral - {nombre_candidato}"
+
+            cuerpo = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div style="background-color: #0D0D0D; color: white; padding: 20px; text-align: center;">
+                        <h1 style="margin: 0; font-size: 24px;">CENERH CONSULTING</h1>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #C9A14A;">CONSULTING</p>
+                    </div>
+                    <div style="padding: 30px; background-color: #f9f9f9;">
+                        <h2 style="color: #D62828; font-size: 18px;">Hola, {nombre_referencia}</h2>
+                        <p><strong>{nombre_candidato}</strong> te incluyó como referencia laboral en un proceso de
+                        selección con CENERH Consulting.</p>
+                        <p>¿Puedes tomarte 2 minutos para responder unas preguntas cortas sobre tu experiencia
+                        trabajando con esta persona?</p>
+                        <p style="text-align: center; margin: 30px 0;">
+                            <a href="{link_formulario}" style="background-color: #D62828; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold;">
+                                RESPONDER
+                            </a>
+                        </p>
+                        <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                            Tu respuesta es confidencial y se comparte únicamente con el reclutador a cargo de este
+                            proceso. Si no reconoces a esta persona o no deseas responder, puedes ignorar este correo.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+
+            mensaje.attach(MIMEText(cuerpo, "html"))
+
+            if not EnviadorEmail.SMTP_USER or not EnviadorEmail.SMTP_PASSWORD:
+                print(f"📧 EMAIL SIMULADO (MOCK MODE - falta SMTP_USER/SMTP_PASSWORD en .env):")
+                print(f"   Para: {email_destinatario}")
+                print(f"   Asunto: Verificación de referencia laboral - {nombre_candidato}")
+                print(f"   Link: {link_formulario}")
+                return {
+                    "status": "success",
+                    "mensaje": f"Email simulado para {email_destinatario} (configura SMTP_USER/SMTP_PASSWORD para envío real)",
+                    "modo": "simulado (mock)",
+                }
+
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            try:
+                server.starttls()
+                server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
+                server.send_message(mensaje)
+            finally:
+                server.quit()
+
+            return {"status": "success", "mensaje": f"Email enviado a {email_destinatario}", "modo": "real"}
+
+        except Exception as e:
+            return {"status": "error", "mensaje": str(e)}
+
 
 # Test
 if __name__ == "__main__":

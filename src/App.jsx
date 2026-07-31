@@ -18,6 +18,7 @@ import LoginCandidatoPage from './pages/LoginCandidatoPage';
 import MisAplicacionesPage from './pages/MisAplicacionesPage';
 import RegistroReclutadorPage from './pages/RegistroReclutadorPage';
 import PlanesPage from './pages/PlanesPage';
+import ReferenciaFormPage from './pages/ReferenciaFormPage';
 import RutaProtegida from './components/RutaProtegida';
 import DashboardReclutador from './pages/reclutador/DashboardReclutador';
 import MembresiaRequeridaPage from './pages/reclutador/MembresiaRequeridaPage';
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro-reclutador" element={<RegistroReclutadorPage />} />
         <Route path="/planes" element={<PlanesPage />} />
+        <Route path="/referencia/:token" element={<ReferenciaFormPage />} />
 
         {/* Portal Reclutador */}
         <Route path="/reclutador/membresia-requerida" element={
