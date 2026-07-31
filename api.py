@@ -76,12 +76,14 @@ import reclutador_router
 import empresa_router
 import candidato_router
 import pagos_router
+import admin_router
 
 app.include_router(auth_router.router)
 app.include_router(reclutador_router.router)
 app.include_router(empresa_router.router)
 app.include_router(candidato_router.router)
 app.include_router(pagos_router.router)
+app.include_router(admin_router.router)
 
 # ============================================================================
 # MODELOS DE ENTRADA (validación de payloads)
