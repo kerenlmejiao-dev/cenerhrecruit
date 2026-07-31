@@ -1,0 +1,11 @@
+# Este repo es un monorepo: el frontend (Vite/React) y el backend (FastAPI)
+# viven en la misma raíz. Vercel solo debe construir el frontend — el
+# backend se despliega aparte, en Railway. Sin esto, Vercel detecta
+# requirements.txt/Procfile y trata de instalar también las dependencias
+# de Python, lo cual falla y rompe el build del frontend.
+
+*.py
+Procfile
+requirements.txt
+legacy/
+uploads/
