@@ -44,6 +44,12 @@ export default function DashboardReclutador() {
           </div>
           <div className="flex gap-3">
             <Link
+              to="/reclutador/metricas"
+              className="bg-white border border-green-600 text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition"
+            >
+              Métricas
+            </Link>
+            <Link
               to="/reclutador/bolsa-talento"
               className="bg-white border border-purple-600 text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-purple-50 transition"
             >

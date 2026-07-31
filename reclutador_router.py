@@ -350,6 +350,49 @@ STATUS_RECLUTAMIENTO_VALIDOS = [
 ]
 
 
+@router.get("/metricas")
+def metricas_reclutador(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("owner", "reclutador")),
+):
+    """Embudo de reclutamiento: cuántos candidatos hay en cada etapa, tasa de
+    conversión a contratado, y tiempo promedio en completar la evaluación.
+    El owner ve todas las vacantes; el reclutador solo las suyas."""
+    query_vacantes = db.query(Vacante.id)
+    if usuario.rol != "owner":
+        query_vacantes = query_vacantes.filter(Vacante.creado_por_usuario_id == usuario.id)
+    vacante_ids = [v.id for v in query_vacantes.all()]
+
+    candidatos = (
+        db.query(Candidato).filter(Candidato.vacante_id.in_(vacante_ids)).all()
+        if vacante_ids else []
+    )
+
+    por_status = {etapa: 0 for etapa in STATUS_RECLUTAMIENTO_VALIDOS}
+    for c in candidatos:
+        if c.status_reclutamiento in por_status:
+            por_status[c.status_reclutamiento] += 1
+
+    total = len(candidatos)
+    contratados = por_status.get("Contratado", 0)
+    rechazados = por_status.get("Rechazado", 0)
+
+    dias_evaluacion = [
+        (c.fecha_completitud - c.fecha_inicio).total_seconds() / 86400
+        for c in candidatos if c.fecha_completitud and c.fecha_inicio
+    ]
+    promedio_dias_evaluacion = round(sum(dias_evaluacion) / len(dias_evaluacion), 1) if dias_evaluacion else None
+
+    return {
+        "total_vacantes": len(vacante_ids),
+        "total_candidatos": total,
+        "por_status": por_status,
+        "tasa_conversion_contratado": round(contratados / total * 100, 1) if total else 0.0,
+        "tasa_rechazo": round(rechazados / total * 100, 1) if total else 0.0,
+        "promedio_dias_evaluacion": promedio_dias_evaluacion,
+    }
+
+
 class StatusReclutamientoPayload(BaseModel):
     status: str
 

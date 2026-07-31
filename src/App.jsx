@@ -27,6 +27,7 @@ import CrearEmpresaPage from './pages/reclutador/CrearEmpresaPage';
 import VacanteDetalle from './pages/reclutador/VacanteDetalle';
 import SuscripcionPage from './pages/reclutador/SuscripcionPage';
 import CandidatoAssessments from './pages/reclutador/CandidatoAssessments';
+import MetricasPage from './pages/reclutador/MetricasPage';
 import BolsaTalentoPage from './pages/reclutador/BolsaTalentoPage';
 import DashboardEmpresa from './pages/empresa/DashboardEmpresa';
 import VacanteDetalleEmpresa from './pages/empresa/VacanteDetalleEmpresa';
@@ -106,6 +107,11 @@ export default function App() {
         <Route path="/reclutador/bolsa-talento" element={
           <RutaProtegida rolesPermitidos={['owner', 'reclutador']}>
             <BolsaTalentoPage />
+          </RutaProtegida>
+        } />
+        <Route path="/reclutador/metricas" element={
+          <RutaProtegida rolesPermitidos={['owner', 'reclutador']}>
+            <MetricasPage />
           </RutaProtegida>
         } />
         <Route path="/reclutador/empresas/nueva" element={

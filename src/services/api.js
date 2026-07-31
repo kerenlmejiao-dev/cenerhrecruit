@@ -165,6 +165,11 @@ export const reclutadorAPI = {
     return { blob: response.data, filename: match ? match[1] : `CV_${candidatoId}` };
   },
 
+  metricas: async () => {
+    const response = await apiClient.get('/api/reclutador/metricas');
+    return response.data;
+  },
+
   referenciasCandidato: async (candidatoId) => {
     const response = await apiClient.get(`/api/reclutador/candidatos/${candidatoId}/referencias`);
     return response.data;
