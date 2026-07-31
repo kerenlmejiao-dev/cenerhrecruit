@@ -2,9 +2,9 @@
  * CENERH RECRUIT OS - Página de Registro
  * Donde candidatos se registran y comienzan la evaluación.
  *
- * Tres modos, según la ruta:
- * - "/"                     -> elige entre todas las vacantes publicadas
- * - "/aplicar/:vacanteId"   -> link directo a una vacante puntual (sin selector)
+ * Dos modos, según la ruta:
+ * - "/aplicar/:vacanteId"   -> link directo a una vacante puntual (compartido
+ *                              por el reclutador, o elegido en VacantesListPage)
  * - "/bolsa-de-talento"     -> completa su perfil sin aplicar a una vacante
  */
 
@@ -13,12 +13,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { candidatosAPI, vacantesAPI } from '../services/api';
 import { FONT_SANS, FONT_SERIF } from '../theme';
 
-export default function RegistroPage({ modo = 'normal' }) {
+export default function RegistroPage({ modo = 'aplicar' }) {
   const navigate = useNavigate();
   const { vacanteId: vacanteIdRuta } = useParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [vacantes, setVacantes] = useState([]);
   const [vacanteFija, setVacanteFija] = useState(null);
   const [cargandoVacante, setCargandoVacante] = useState(modo === 'aplicar');
   const [formData, setFormData] = useState({
@@ -29,24 +28,10 @@ export default function RegistroPage({ modo = 'normal' }) {
   });
 
   useEffect(() => {
-    if (modo === 'normal') {
-      cargarVacantes();
-    } else if (modo === 'aplicar' && vacanteIdRuta) {
+    if (modo === 'aplicar' && vacanteIdRuta) {
       cargarVacanteFija();
     }
   }, [modo, vacanteIdRuta]);
-
-  const cargarVacantes = async () => {
-    try {
-      const data = await vacantesAPI.listar();
-      setVacantes(data.vacantes);
-      if (data.vacantes.length > 0) {
-        setFormData(prev => ({ ...prev, vacante_id: data.vacantes[0].id }));
-      }
-    } catch (err) {
-      console.error('Error cargando vacantes:', err);
-    }
-  };
 
   const cargarVacanteFija = async () => {
     setCargandoVacante(true);
@@ -207,23 +192,6 @@ export default function RegistroPage({ modo = 'normal' }) {
                   placeholder="+1-809-000-0000"
                 />
               </div>
-
-              {/* Vacante: solo en el modo normal (dropdown de todas las publicadas) */}
-              {modo === 'normal' && (
-                <div>
-                  <label className={labelClass}>Posición *</label>
-                  <select
-                    name="vacante_id"
-                    value={formData.vacante_id}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    {vacantes.map(v => (
-                      <option key={v.id} value={v.id} className="bg-[#0D0D0D]">{v.nombre} - {v.cliente}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               {/* Botón */}
               <button

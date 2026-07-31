@@ -210,7 +210,7 @@ async def listar_vacantes_publico(db: Session = Depends(get_db)):
     vacantes = db.query(Vacante).filter_by(estado="activa").order_by(Vacante.creado_en.desc()).all()
     return {
         "vacantes": [
-            {"id": v.id, "nombre": v.nombre, "cliente": v.cliente}
+            {"id": v.id, "nombre": v.nombre, "cliente": v.cliente, "descripcion": v.descripcion}
             for v in vacantes
         ]
     }
