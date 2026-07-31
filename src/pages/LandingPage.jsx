@@ -32,12 +32,12 @@ export default function LandingPage() {
           className="max-w-3xl mx-auto text-[32px] md:text-[44px] font-semibold leading-tight mb-6"
           style={FONT_SERIF}
         >
-          Encontrar al candidato correcto no debería ser un proceso manual.{' '}
-          <span className="text-[#C9A14A]">Debería ser una decisión con datos.</span>
+          Aquí empieza tu proceso de reclutamiento, sin importar de qué lado estés.{' '}
+          <span className="text-[#C9A14A]">Un mismo camino, para los dos.</span>
         </h1>
         <p className="text-[#B8BFC7] text-lg max-w-xl mx-auto mb-9">
-          CENERH RECRUIT OS evalúa, clasifica y da seguimiento a cada candidato de forma
-          objetiva -- para que usted decida con información, no con intuición.
+          Buscas tu próxima oportunidad, o al candidato correcto para tu equipo -- aquí encuentras
+          el mismo proceso: claro, objetivo y con datos reales.
         </p>
         <div className="w-20 h-0.5 bg-[#C9A14A] mx-auto"></div>
       </section>
