@@ -695,8 +695,13 @@ if os.path.isdir(_FRONTEND_DIST):
 if __name__ == "__main__":
     import uvicorn
 
-    api_host = os.getenv("API_HOST", "127.0.0.1")
-    api_port = int(os.getenv("API_PORT", "8000"))
+    # En Railway (y la mayoría de plataformas de contenedores) hay que
+    # escuchar en 0.0.0.0 y en el puerto que la plataforma asigna via $PORT
+    # -- no en el 127.0.0.1:8000 fijo que usábamos solo para desarrollo local.
+    # API_HOST/API_PORT siguen mandando si están definidas explícitamente
+    # (como en el .env local), para no cambiar el comportamiento en desarrollo.
+    api_host = os.getenv("API_HOST", "0.0.0.0")
+    api_port = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
 
     print("🚀 Iniciando CENERH RECRUIT OS API")
     print(f"   URL: http://{api_host}:{api_port}")
