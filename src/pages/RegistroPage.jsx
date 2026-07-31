@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { candidatosAPI, vacantesAPI } from '../services/api';
+import { FONT_SANS, FONT_SERIF } from '../theme';
 
 export default function RegistroPage({ modo = 'normal' }) {
   const navigate = useNavigate();
@@ -108,20 +109,23 @@ export default function RegistroPage({ modo = 'normal' }) {
     ? 'Completa tu perfil. Te contactaremos cuando surja una posición para ti.'
     : 'Completa el formulario para comenzar tu evaluación';
 
+  const inputClass = "w-full px-4 py-2.5 bg-[#0D0D0D] border border-[#2a2a2a] text-white rounded focus:ring-1 focus:ring-[#C9A14A] focus:border-[#C9A14A] outline-none transition placeholder:text-[#555]";
+  const labelClass = "block text-sm font-medium text-[#B8BFC7] mb-1.5";
+
   if (modo === 'aplicar' && cargandoVacante) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center">
-        <p className="text-white">Cargando...</p>
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center" style={FONT_SANS}>
+        <p className="text-[#B8BFC7]">Cargando...</p>
       </div>
     );
   }
 
   if (modo === 'aplicar' && !vacanteFija) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md text-center">
-          <p className="text-red-600 mb-4">{error || 'Esta vacante no está disponible.'}</p>
-          <button onClick={() => navigate('/aplicar')} className="text-blue-600 hover:text-blue-800 font-medium">
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-4" style={FONT_SANS}>
+        <div className="border border-[#2a2a2a] p-8 max-w-md text-center">
+          <p className="text-[#D62828] mb-4">{error || 'Esta vacante no está disponible.'}</p>
+          <button onClick={() => navigate('/aplicar')} className="text-[#C9A14A] hover:text-white font-medium">
             Ver otras vacantes
           </button>
         </div>
@@ -130,32 +134,34 @@ export default function RegistroPage({ modo = 'normal' }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-4" style={FONT_SANS}>
       {/* Container */}
       <div className="w-full max-w-md">
         {/* Card */}
-        <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
+        <div className="border border-[#2a2a2a] overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-8 text-center">
-            <div className="text-4xl font-bold text-white mb-2">CENERH</div>
-            <div className="text-sm text-blue-100">CONSULTING</div>
-            <p className="text-blue-100 text-xs mt-2">Evaluación Estratégica de Gestión Humana</p>
+          <div className="border-b border-[#2a2a2a] px-6 py-8 text-center">
+            <div className="font-extrabold text-3xl tracking-wide text-white">
+              CEN<span className="text-[#D62828]">E</span>RH
+            </div>
+            <div className="text-[#C9A14A] text-xs tracking-[6px] mt-2">CONSULTING</div>
+            <p className="text-[#B8BFC7] text-xs mt-4">Evaluación Estratégica de Gestión Humana</p>
           </div>
 
           {/* Body */}
           <div className="p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{titulo}</h1>
-            <p className="text-gray-600 text-sm mb-6">{subtitulo}</p>
+            <h1 className="text-2xl font-semibold text-white mb-2" style={FONT_SERIF}>{titulo}</h1>
+            <p className="text-[#B8BFC7] text-sm mb-6">{subtitulo}</p>
 
             {modo === 'aplicar' && vacanteFija && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
-                <p className="text-sm text-blue-900 font-semibold">{vacanteFija.nombre}</p>
-                <p className="text-xs text-blue-700">{vacanteFija.cliente}</p>
+              <div className="border border-[#2a2a2a] px-4 py-3 mb-4">
+                <p className="text-sm text-white font-semibold">{vacanteFija.nombre}</p>
+                <p className="text-xs text-[#0050A0]">{vacanteFija.cliente}</p>
               </div>
             )}
 
             {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+              <div className="border border-[#D62828] text-[#D62828] px-4 py-3 mb-6 text-sm">
                 {error}
               </div>
             )}
@@ -163,47 +169,41 @@ export default function RegistroPage({ modo = 'normal' }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Nombre */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre Completo *
-                </label>
+                <label className={labelClass}>Nombre Completo *</label>
                 <input
                   type="text"
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className={inputClass}
                   placeholder="Tu nombre completo"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
+                <label className={labelClass}>Email *</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className={inputClass}
                   placeholder="tu@email.com"
                 />
               </div>
 
               {/* Teléfono */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Teléfono
-                </label>
+                <label className={labelClass}>Teléfono</label>
                 <input
                   type="tel"
                   name="telefono"
                   value={formData.telefono}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className={inputClass}
                   placeholder="+1-809-000-0000"
                 />
               </div>
@@ -211,17 +211,15 @@ export default function RegistroPage({ modo = 'normal' }) {
               {/* Vacante: solo en el modo normal (dropdown de todas las publicadas) */}
               {modo === 'normal' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Posición *
-                  </label>
+                  <label className={labelClass}>Posición *</label>
                   <select
                     name="vacante_id"
                     value={formData.vacante_id}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    className={inputClass}
                   >
                     {vacantes.map(v => (
-                      <option key={v.id} value={v.id}>{v.nombre} - {v.cliente}</option>
+                      <option key={v.id} value={v.id} className="bg-[#0D0D0D]">{v.nombre} - {v.cliente}</option>
                     ))}
                   </select>
                 </div>
@@ -231,21 +229,21 @@ export default function RegistroPage({ modo = 'normal' }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-900 transition disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                className="w-full bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-3 transition disabled:opacity-50 disabled:cursor-not-allowed mt-6"
               >
-                {loading ? 'Registrando...' : modo === 'bolsa' ? 'Registrar mi perfil' : 'Comenzar Evaluación'}
+                {loading ? 'REGISTRANDO...' : modo === 'bolsa' ? 'REGISTRAR MI PERFIL' : 'COMENZAR EVALUACIÓN'}
               </button>
 
               {/* Nota */}
-              <p className="text-xs text-gray-500 text-center mt-4">
+              <p className="text-xs text-[#666] text-center mt-4">
                 * Campos requeridos. Tu información será confidencial.
               </p>
             </form>
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 text-center text-xs text-gray-500 border-t">
-            <p>© 2026 CENERH Consulting. Todos los derechos reservados.</p>
+          <div className="border-t border-[#2a2a2a] px-6 py-4 text-center text-xs text-[#666]">
+            <p>CENERH Consulting — Punta Cana, República Dominicana</p>
           </div>
         </div>
       </div>

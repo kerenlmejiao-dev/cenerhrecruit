@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { testsAPI, vacantesAPI } from '../services/api';
+import { FONT_SANS, FONT_SERIF } from '../theme';
 
 export default function TestsPage() {
   const navigate = useNavigate();
@@ -123,9 +124,9 @@ export default function TestsPage() {
 
   if (loading && tests.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center" style={FONT_SANS}>
         <div className="text-white text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#C9A14A] mb-4"></div>
           <p>Cargando evaluación...</p>
         </div>
       </div>
@@ -134,9 +135,9 @@ export default function TestsPage() {
 
   if (!tests[testActual]) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
-          <p className="text-gray-900">Error al cargar tests</p>
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center" style={FONT_SANS}>
+        <div className="border border-[#2a2a2a] p-8 text-center max-w-md">
+          <p className="text-white">Error al cargar tests</p>
         </div>
       </div>
     );
@@ -147,34 +148,34 @@ export default function TestsPage() {
   const porcentajeProgreso = ((testActual + 1) / totalTests) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 py-8">
+    <div className="min-h-screen bg-[#0D0D0D] py-8" style={FONT_SANS}>
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-white">{testActualObj.nombre}</h1>
-              <p className="text-blue-100 text-sm">Hola, {candidatoNombre}</p>
+              <h1 className="text-3xl font-semibold text-white" style={FONT_SERIF}>{testActualObj.nombre}</h1>
+              <p className="text-[#B8BFC7] text-sm">Hola, {candidatoNombre}</p>
             </div>
             <div className="text-right">
-              <div className="text-4xl font-bold text-yellow-300">
+              <div className="text-4xl font-bold text-[#C9A14A]">
                 {testActual + 1} / {totalTests}
               </div>
-              <p className="text-blue-100 text-sm">Test</p>
+              <p className="text-[#B8BFC7] text-sm">Test</p>
             </div>
           </div>
 
           {/* Barra de progreso */}
-          <div className="bg-blue-950 rounded-full h-2 overflow-hidden">
+          <div className="bg-[#1f1f1f] h-1 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-yellow-400 to-yellow-300 h-full transition-all duration-300"
+              className="bg-[#C9A14A] h-full transition-all duration-300"
               style={{ width: `${porcentajeProgreso}%` }}
             ></div>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          <div className="border border-[#D62828] text-[#D62828] px-4 py-3 mb-6">
             {error}
           </div>
         )}
@@ -184,14 +185,14 @@ export default function TestsPage() {
           {preguntas.map((pregunta, idx) => (
             <div
               key={pregunta.id}
-              className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
+              className="border border-[#2a2a2a] p-6 hover:border-[#3a3a3a] transition"
             >
               {/* Número de pregunta */}
               <div className="flex items-start mb-4">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mr-4 flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[#0050A0] text-white flex items-center justify-center font-bold mr-4 flex-shrink-0">
                   {idx + 1}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 flex-grow">
+                <h3 className="text-lg font-semibold text-white flex-grow">
                   {pregunta.pregunta}
                 </h3>
               </div>
@@ -202,7 +203,7 @@ export default function TestsPage() {
                   {Object.entries(pregunta.opciones).map(([letra, texto]) => (
                     <label
                       key={letra}
-                      className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
+                      className="flex items-center p-3 border border-[#2a2a2a] cursor-pointer hover:border-[#C9A14A] transition"
                     >
                       <input
                         type="radio"
@@ -210,9 +211,9 @@ export default function TestsPage() {
                         value={letra}
                         checked={respuestas[pregunta.id] === letra}
                         onChange={(e) => handleRespuesta(pregunta.id, e.target.value)}
-                        className="w-5 h-5 text-blue-600"
+                        className="w-5 h-5 accent-[#D62828]"
                       />
-                      <span className="ml-3 text-gray-700"><strong>{letra}.</strong> {texto}</span>
+                      <span className="ml-3 text-[#B8BFC7]"><strong className="text-white">{letra}.</strong> {texto}</span>
                     </label>
                   ))}
                 </div>
@@ -227,9 +228,9 @@ export default function TestsPage() {
                         value={valor}
                         checked={respuestas[pregunta.id] === valor}
                         onChange={(e) => handleRespuesta(pregunta.id, e.target.value)}
-                        className="w-5 h-5 text-blue-600"
+                        className="w-5 h-5 accent-[#D62828]"
                       />
-                      <span className="text-xs text-gray-600 mt-2">
+                      <span className="text-xs text-[#B8BFC7] mt-2">
                         {valor === 1 && 'Muy en desacuerdo'}
                         {valor === 2 && 'Desacuerdo'}
                         {valor === 3 && 'Neutral'}
@@ -249,14 +250,14 @@ export default function TestsPage() {
           <button
             onClick={handleSiguiente}
             disabled={guardando}
-            className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-3 px-8 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {guardando ? 'Guardando...' : testActual === totalTests - 1 ? 'Finalizar' : 'Siguiente'}
+            {guardando ? 'GUARDANDO...' : testActual === totalTests - 1 ? 'FINALIZAR' : 'SIGUIENTE'}
           </button>
         </div>
 
         {/* Info */}
-        <div className="mt-8 text-center text-blue-100 text-sm">
+        <div className="mt-8 text-center text-[#666] text-sm">
           <p>Tus respuestas se guardan automáticamente</p>
         </div>
       </div>

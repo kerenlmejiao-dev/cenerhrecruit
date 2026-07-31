@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { perfilAPI } from '../services/api';
+import { FONT_SANS, FONT_SERIF } from '../theme';
 
 const ESTADOS_CIVILES = ['Soltero(a)', 'Casado(a)', 'Unión libre', 'Divorciado(a)', 'Viudo(a)'];
 const NIVELES_ACADEMICOS = [
@@ -29,19 +30,19 @@ const FUENTES_RECLUTAMIENTO = [
 ];
 
 function SeccionTitulo({ children }) {
-  return <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mt-6 mb-3 border-b border-gray-200 pb-1">{children}</h2>;
+  return <h2 className="text-sm font-bold text-[#C9A14A] uppercase tracking-wide mt-6 mb-3 border-b border-[#2a2a2a] pb-1">{children}</h2>;
 }
 
 function Campo({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-[#B8BFC7] mb-1">{label}</label>
       {children}
     </div>
   );
 }
 
-const inputClass = "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none";
+const inputClass = "w-full px-4 py-2 bg-[#0D0D0D] border border-[#2a2a2a] text-white rounded focus:ring-1 focus:ring-[#C9A14A] focus:border-[#C9A14A] outline-none placeholder:text-[#555]";
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -160,10 +161,10 @@ export default function PerfilPage() {
 
   if (guardadoBolsa) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">¡Gracias!</h1>
-          <p className="text-gray-600 text-sm">
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-4" style={FONT_SANS}>
+        <div className="border border-[#2a2a2a] p-8 max-w-md text-center">
+          <h1 className="text-2xl font-semibold text-white mb-2" style={FONT_SERIF}>¡Gracias!</h1>
+          <p className="text-[#B8BFC7] text-sm">
             Tu perfil quedó registrado en nuestra bolsa de talento. Te contactaremos cuando surja una posición que encaje contigo.
           </p>
         </div>
@@ -172,21 +173,21 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4 py-10">
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-4 py-10" style={FONT_SANS}>
       <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-6 text-center">
-            <h1 className="text-xl font-bold text-white">
+        <div className="border border-[#2a2a2a] overflow-hidden">
+          <div className="border-b border-[#2a2a2a] px-6 py-6 text-center">
+            <h1 className="text-xl font-semibold text-white" style={FONT_SERIF}>
               {volverAResultados ? 'Corrige o actualiza tus datos' : esBolsaTalento ? 'Únete a nuestra bolsa de talento' : 'Cuéntanos un poco más de ti'}
             </h1>
-            <p className="text-blue-100 text-xs mt-1">
+            <p className="text-[#B8BFC7] text-xs mt-1">
               {volverAResultados ? 'Al guardar volverás a tus resultados' : esBolsaTalento ? 'Completa tu perfil para que te tengamos en cuenta' : 'Antes de comenzar los tests'}
             </p>
           </div>
 
           <div className="p-8">
             {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+              <div className="border border-[#D62828] text-[#D62828] px-4 py-3 mb-6 text-sm">
                 {error}
               </div>
             )}
@@ -288,12 +289,12 @@ export default function PerfilPage() {
                   </select>
                 </Campo>
                 <div className="flex items-end gap-6 pb-2">
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" name="tiene_vehiculo" checked={formData.tiene_vehiculo} onChange={handleChange} className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm text-[#B8BFC7]">
+                    <input type="checkbox" name="tiene_vehiculo" checked={formData.tiene_vehiculo} onChange={handleChange} className="w-4 h-4 accent-[#D62828]" />
                     Tengo vehículo
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" name="tiene_visa" checked={formData.tiene_visa} onChange={handleChange} className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm text-[#B8BFC7]">
+                    <input type="checkbox" name="tiene_visa" checked={formData.tiene_visa} onChange={handleChange} className="w-4 h-4 accent-[#D62828]" />
                     Tengo visa
                   </label>
                 </div>
@@ -301,20 +302,20 @@ export default function PerfilPage() {
 
               <Campo label="Currículum (PDF, DOC o DOCX)">
                 {cvExistente && (
-                  <p className="text-xs text-gray-500 mb-1">Ya tienes cargado: {cvExistente}. Sube uno nuevo solo si quieres reemplazarlo.</p>
+                  <p className="text-xs text-[#666] mb-1">Ya tienes cargado: {cvExistente}. Sube uno nuevo solo si quieres reemplazarlo.</p>
                 )}
                 <input
                   type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange}
-                  className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="w-full text-sm text-[#B8BFC7] file:mr-3 file:py-2 file:px-4 file:border-0 file:bg-[#2a2a2a] file:text-white hover:file:bg-[#3a3a3a]"
                 />
               </Campo>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-900 transition disabled:opacity-50 mt-6"
+                className="w-full bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-3 transition disabled:opacity-50 mt-6"
               >
-                {loading ? 'Guardando...' : volverAResultados ? 'Guardar cambios' : esBolsaTalento ? 'Registrar mi perfil' : 'Continuar a los tests'}
+                {loading ? 'GUARDANDO...' : volverAResultados ? 'GUARDAR CAMBIOS' : esBolsaTalento ? 'REGISTRAR MI PERFIL' : 'CONTINUAR A LOS TESTS'}
               </button>
             </form>
           </div>
