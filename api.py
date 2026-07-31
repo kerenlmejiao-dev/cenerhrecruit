@@ -3,23 +3,47 @@ api.py - FastAPI para CENERH RECRUIT OS
 4 endpoints de lectura iniciales
 """
 
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from typing import List, Optional
-from models import Base, TestPsicometrico, PreguntaTest, Vacante, Candidato, RespuestaCandidata, ScoreCandidata
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import json
 import os
+from datetime import datetime
+
+from dotenv import load_dotenv
+
+load_dotenv()  # Debe ejecutarse antes de importar módulos que leen os.getenv() al cargarse
+
+from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi.responses import JSONResponse, FileResponse
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr, Field
+from typing import List, Optional, Dict
+from models import (
+    AssessmentCenter,
+    AssessmentScore,
+    Base,
+    Candidato,
+    CandidatoPerfil,
+    PreguntaTest,
+    RespuestaCandidata,
+    ScoreCandidata,
+    TestPsicometrico,
+    Usuario,
+    Vacante,
+)
+from auth import require_admin
+from auth_users import require_role
+from database import engine, get_db
+from migraciones import aplicar_migraciones
 
 # ============================================================================
 # CONFIG
 # ============================================================================
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./cenerh_recruit.db")
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
+aplicar_migraciones(engine)
 
 app = FastAPI(
     title="CENERH RECRUIT OS",
@@ -29,23 +53,50 @@ app = FastAPI(
 
 from fastapi.middleware.cors import CORSMiddleware
 
+# Orígenes permitidos: configurables por variable de entorno (coma-separados).
+# Por defecto solo se permite desarrollo local.
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
         CORSMiddleware,
-        allow_origins=["https://cenerhrecruit-frontend.vercel.app"],
+        allow_origins=ALLOWED_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
 )
 
+import auth_router
+import reclutador_router
+import empresa_router
+import candidato_router
+import pagos_router
+
+app.include_router(auth_router.router)
+app.include_router(reclutador_router.router)
+app.include_router(empresa_router.router)
+app.include_router(candidato_router.router)
+app.include_router(pagos_router.router)
+
 # ============================================================================
-# DEPENDENCY: Get DB Session
+# MODELOS DE ENTRADA (validación de payloads)
 # ============================================================================
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+class CandidatoCreate(BaseModel):
+    # Nulo/omitido = se registra en la bolsa de talento, sin aplicar a una
+    # vacante puntual todavía.
+    vacante_id: Optional[str] = None
+    nombre: str = Field(..., min_length=1, max_length=200)
+    email: EmailStr
+    telefono: Optional[str] = Field(default=None, max_length=30)
+
+
+class RespuestasPayload(BaseModel):
+    respuestas: Dict[str, str] = Field(default_factory=dict)
 
 
 # ============================================================================
@@ -149,6 +200,21 @@ async def test_info(test_id: str, db: Session = Depends(get_db)):
 
 
 # ============================================================================
+# ENDPOINT: GET /api/vacantes
+# Lista pública de vacantes activas (para el formulario de postulación)
+# ============================================================================
+@app.get("/api/vacantes")
+async def listar_vacantes_publico(db: Session = Depends(get_db)):
+    vacantes = db.query(Vacante).filter_by(estado="activa").order_by(Vacante.creado_en.desc()).all()
+    return {
+        "vacantes": [
+            {"id": v.id, "nombre": v.nombre, "cliente": v.cliente}
+            for v in vacantes
+        ]
+    }
+
+
+# ============================================================================
 # ENDPOINT 3: GET /api/vacantes/{vacante_id}/config
 # Retorna configuración de una vacante (qué tests aplica + pesos)
 # ============================================================================
@@ -188,6 +254,7 @@ async def vacante_config(vacante_id: str, db: Session = Depends(get_db)):
             "pesos_scoring": vacante.pesos_scoring,
             "peso_total": peso_total,
             "pesos_validos": abs(peso_total - 1.0) < 0.01,  # Permitir pequeño error de redondeo
+            "estado": vacante.estado,
             "creado_en": vacante.creado_en.isoformat(),
         }
     except HTTPException:
@@ -282,19 +349,23 @@ async def health_check():
 async def guardar_respuestas(
     test_id: str,
     candidato_id: str,
-    payload: dict,
+    payload: RespuestasPayload,
     db: Session = Depends(get_db)
 ):
     """Guardar respuestas y calcular score del test"""
     try:
         from scoring import SistemaScoring
-        
+
+        candidato = db.query(Candidato).filter_by(id=candidato_id).first()
+        if not candidato:
+            raise HTTPException(status_code=404, detail=f"Candidato '{candidato_id}' no encontrado")
+
         test = db.query(TestPsicometrico).filter_by(id=test_id).first()
         if not test:
             raise HTTPException(status_code=404, detail=f"Test '{test_id}' no encontrado")
-        
+
         preguntas = db.query(PreguntaTest).filter_by(test_id=test_id).all()
-        respuestas = payload.get("respuestas", {})
+        respuestas = payload.respuestas
         
         aciertos = 0
         for pregunta in preguntas:
@@ -342,52 +413,73 @@ async def obtener_resultados(
     candidato_id: str,
     db: Session = Depends(get_db)
 ):
-    """Retorna todos los scores y score final ponderado"""
+    """Retorna todos los scores, puntúa assessments pendientes, y persiste el score final ponderado"""
     try:
-        from scoring import SistemaScoring
-        
+        from scoring import SistemaScoring, scoring_final
+        from assessment_service import puntuar_todos_los_assessments_candidato
+
+        candidato = db.query(Candidato).filter_by(id=candidato_id).first()
+        if not candidato:
+            raise HTTPException(status_code=404, detail=f"Candidato '{candidato_id}' no encontrado")
+
         scores = db.query(ScoreCandidata).filter_by(candidato_id=candidato_id).all()
-        
         if not scores:
             raise HTTPException(status_code=404, detail=f"No hay scores para '{candidato_id}'")
-        
-        categorias = {
-            "competencias": [],
-            "psicometricos": [],
-            "cognitivos": [],
-        }
-        
+
         scores_detalle = []
-        
+        categorias_display = {"competencias": [], "psicometricos": [], "cognitivos": []}
         for score in scores:
             test = db.query(TestPsicometrico).filter_by(id=score.test_id).first()
-            categoria = SistemaScoring.CATEGORIA_TEST.get(score.test_id, "otros")
-            
-            if categoria in categorias:
-                categorias[categoria].append(score.score_normalizado)
-            
             scores_detalle.append({
                 "test_id": score.test_id,
                 "test_nombre": test.nombre if test else score.test_id,
                 "score": round(score.score_normalizado, 1),
                 "clasificacion": score.clasificacion_test,
             })
-        
-        promedios = {}
-        for cat, valores in categorias.items():
-            if valores:
-                promedios[cat] = round(sum(valores) / len(valores), 1)
-        
-        pesos = {"competencias": 0.35, "psicometricos": 0.35, "cognitivos": 0.30}
-        score_final = (
-            promedios.get("competencias", 0) * pesos["competencias"] +
-            promedios.get("psicometricos", 0) * pesos["psicometricos"] +
-            promedios.get("cognitivos", 0) * pesos["cognitivos"]
-        )
-        score_final = round(score_final, 1)
-        
+            categoria = SistemaScoring.CATEGORIA_TEST.get(score.test_id)
+            if categoria in categorias_display:
+                categorias_display[categoria].append(score.score_normalizado)
+
+        # Solo para exhibición (desglose por categoría); el score final ponderado
+        # se calcula una única vez en scoring.py (scoring_final), sin duplicar la fórmula.
+        promedios = {
+            cat: round(sum(valores) / len(valores), 1)
+            for cat, valores in categorias_display.items()
+            if valores
+        }
+
+        score_tests, _clasificacion_tests = scoring_final(db, candidato_id, candidato.vacante_id)
+
+        # Puntuar (o recuperar) los assessment centers respondidos por el candidato
+        puntuar_todos_los_assessments_candidato(db, candidato_id)
+        assessment_scores = db.query(AssessmentScore).filter_by(candidato_id=candidato_id).all()
+
+        assessments_detalle = [
+            {
+                "assessment_id": a.assessment_id,
+                "nombre": db.query(AssessmentCenter).filter_by(id=a.assessment_id).first().nombre,
+                "score": round(a.score_normalizado, 1),
+                "feedback": a.feedback_llm,
+                "revisado_por_humano": a.revisado_por_humano,
+            }
+            for a in assessment_scores
+        ]
+
+        if assessment_scores:
+            promedio_assessments = sum(a.score_normalizado for a in assessment_scores) / len(assessment_scores)
+            # Score final: 80% tests tradicionales + 20% assessment centers
+            score_final = round(score_tests * 0.8 + promedio_assessments * 0.2, 1)
+        else:
+            score_final = score_tests
+
         clasificacion_final = SistemaScoring._clasificar_score(score_final)
-        
+
+        candidato.score_final = score_final
+        candidato.clasificacion = clasificacion_final
+        candidato.estado = "completado"
+        candidato.fecha_completitud = candidato.fecha_completitud or datetime.utcnow()
+        db.commit()
+
         return {
             "status": "success",
             "candidato_id": candidato_id,
@@ -395,8 +487,10 @@ async def obtener_resultados(
             "clasificacion_final": clasificacion_final,
             "scores_por_test": scores_detalle,
             "promedios": promedios,
+            "assessments": assessments_detalle,
+            "status_reclutamiento": candidato.status_reclutamiento,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -405,40 +499,69 @@ async def obtener_resultados(
 
 @app.post("/api/candidatos")
 async def crear_candidato(
-    datos: dict,
+    datos: CandidatoCreate,
     db: Session = Depends(get_db)
 ):
     """Crear nuevo candidato"""
     try:
         import uuid
-        
-        vacante_id = datos.get("vacante_id")
-        nombre = datos.get("nombre")
-        email = datos.get("email")
-        
-        if not all([vacante_id, nombre, email]):
-            raise HTTPException(status_code=400, detail="Faltan campos: vacante_id, nombre, email")
-        
-        vacante = db.query(Vacante).filter_by(id=vacante_id).first()
-        if not vacante:
-            raise HTTPException(status_code=404, detail=f"Vacante '{vacante_id}' no encontrada")
-        
+
+        vacante = None
+        if datos.vacante_id:
+            vacante = db.query(Vacante).filter_by(id=datos.vacante_id).first()
+            if not vacante:
+                raise HTTPException(status_code=404, detail=f"Vacante '{datos.vacante_id}' no encontrada")
+            if vacante.estado != "activa":
+                raise HTTPException(status_code=400, detail="Esta vacante no está disponible para aplicar")
+
         candidato = Candidato(
             id=f"cand_{uuid.uuid4().hex[:12]}",
-            vacante_id=vacante_id,
-            nombre=nombre,
-            email=email,
+            vacante_id=datos.vacante_id,
+            nombre=datos.nombre,
+            email=datos.email,
+            telefono=datos.telefono,
             estado="iniciado",
         )
-        
+
         db.add(candidato)
         db.commit()
-        
+
+        # Candidato recurrente: si ya aplicó antes con este mismo email, reutiliza
+        # los datos de su perfil más reciente (precargados, editables para esta
+        # aplicación sin afectar la aplicación anterior).
+        aplicacion_anterior = (
+            db.query(Candidato)
+            .filter(Candidato.email == datos.email, Candidato.id != candidato.id)
+            .order_by(Candidato.fecha_inicio.desc())
+            .first()
+        )
+        if aplicacion_anterior and aplicacion_anterior.perfil:
+            perfil_anterior = aplicacion_anterior.perfil
+            nuevo_perfil = CandidatoPerfil(candidato_id=candidato.id)
+            for columna in CandidatoPerfil.__table__.columns:
+                if columna.name in ("id", "candidato_id", "actualizado_en"):
+                    continue
+                setattr(nuevo_perfil, columna.name, getattr(perfil_anterior, columna.name))
+            db.add(nuevo_perfil)
+            db.commit()
+
+        # Prioriza vacante_tests (selector del portal reclutador); si la vacante
+        # no tiene ninguno asignado (vacantes de ejemplo del seed), usa el JSON legado.
+        # Sin vacante (bolsa de talento) no hay tests que responder todavía.
+        tests_a_responder = []
+        if vacante:
+            tests_desde_relacion = [
+                vt.test_id
+                for vt in sorted(vacante.vacante_tests, key=lambda vt: (vt.orden if vt.orden is not None else 0))
+            ]
+            tests_a_responder = tests_desde_relacion or vacante.tests_a_aplicar
+
         return {
             "status": "success",
             "candidato_id": candidato.id,
             "nombre": candidato.nombre,
-            "tests_a_responder": vacante.tests_a_aplicar,
+            "es_bolsa_talento": vacante is None,
+            "tests_a_responder": tests_a_responder,
         }
         
     except HTTPException:
@@ -451,26 +574,38 @@ async def crear_candidato(
 @app.get("/api/candidatos/{candidato_id}/ficha.pdf")
 async def generar_ficha_pdf(
     candidato_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("owner", "reclutador")),
 ):
-    """Generar PDF con ficha técnica del candidato"""
+    """Generar y descargar el PDF con la ficha técnica del candidato.
+
+    La ficha incluye datos personales sensibles (cédula, salario, dirección,
+    contacto de emergencia), así que solo el reclutador dueño de la vacante
+    (o el owner) puede descargarla."""
     try:
+        from fastapi import Response
         from pdf_generator import GeneradorPDF
-        
+
         candidato = db.query(Candidato).filter_by(id=candidato_id).first()
         if not candidato:
             raise HTTPException(status_code=404, detail=f"Candidato '{candidato_id}' no encontrado")
-        
+
+        # Bolsa de talento (sin vacante): no pertenece a ningún reclutador en
+        # particular, cualquiera con sesión puede descargar la ficha.
+        if candidato.vacante_id is not None:
+            vacante = db.query(Vacante).filter_by(id=candidato.vacante_id).first()
+            if usuario.rol != "owner" and (not vacante or vacante.creado_por_usuario_id != usuario.id):
+                raise HTTPException(status_code=403, detail="No autorizado para ver la ficha de este candidato")
+
         pdf_bytes = GeneradorPDF.generar_ficha_candidato(db, candidato_id)
-        
-        return {
-            "status": "success",
-            "candidato_id": candidato_id,
-            "nombre": candidato.nombre,
-            "tamaño_kb": round(len(pdf_bytes) / 1024, 2),
-            "mensaje": "PDF generado exitosamente",
-        }
-        
+
+        nombre_archivo = f"Ficha_{candidato.nombre.replace(' ', '_')}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
+        )
+
     except HTTPException:
         raise
     except Exception as e:
@@ -520,34 +655,38 @@ async def enviar_email_candidato(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/")
-async def root():
+@app.get("/api/info")
+async def info():
     """Información de la API"""
     return {
         "app": "CENERH RECRUIT OS",
         "version": "1.0.0",
-        "fase": "3 - PDF + Email (COMPLETADA)",
-        "endpoints_totales": 10,
-        "endpoints": {
-            "lectura": {
-                "health": "GET /health",
-                "tests_disponibles": "GET /api/tests/disponibles",
-                "test_info": "GET /api/tests/{test_id}/info",
-                "vacante_config": "GET /api/vacantes/{vacante_id}/config",
-                "obtener_preguntas": "GET /api/tests/{test_id}/{candidato_id}",
-            },
-            "escritura": {
-                "crear_candidato": "POST /api/candidatos",
-                "guardar_respuestas": "POST /api/tests/{test_id}/{candidato_id}/respuestas",
-                "obtener_resultados": "GET /api/candidatos/{candidato_id}/resultados",
-            },
-            "exportar": {
-                "generar_pdf": "GET /api/candidatos/{candidato_id}/ficha.pdf (NUEVA)",
-                "enviar_email": "POST /api/candidatos/{candidato_id}/email (NUEVA)",
-            }
-        },
-        "status": "🚀 OPERACIONAL - LISTO PARA PRODUCCIÓN"
+        "status": "OPERACIONAL",
     }
+
+
+# ============================================================================
+# FRONTEND (servido desde el mismo backend cuando existe un build de producción)
+#
+# En desarrollo (npm run dev) el frontend corre aparte en :5173 y esta sección
+# no hace nada (dist/ no existe). Para exponer la app por un solo túnel/puerto,
+# genera el build (`npm run build`) antes de arrancar la API.
+# ============================================================================
+_FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
+
+if os.path.isdir(_FRONTEND_DIST):
+    from fastapi.staticfiles import StaticFiles
+
+    _assets_dir = os.path.join(_FRONTEND_DIST, "assets")
+    if os.path.isdir(_assets_dir):
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="frontend-assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def servir_frontend(full_path: str):
+        """Catch-all: cualquier ruta que no sea de la API sirve el index.html
+        del frontend, para que las rutas de React Router (ej. /reclutador,
+        /empresa/vacantes/123) funcionen al recargar o entrar por link directo."""
+        return FileResponse(os.path.join(_FRONTEND_DIST, "index.html"))
 
 
 # ============================================================================
@@ -555,7 +694,11 @@ async def root():
 # ============================================================================
 if __name__ == "__main__":
     import uvicorn
+
+    api_host = os.getenv("API_HOST", "127.0.0.1")
+    api_port = int(os.getenv("API_PORT", "8000"))
+
     print("🚀 Iniciando CENERH RECRUIT OS API")
-    print("   URL: http://localhost:8000")
-    print("   Docs: http://localhost:8000/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print(f"   URL: http://{api_host}:{api_port}")
+    print(f"   Docs: http://{api_host}:{api_port}/docs")
+    uvicorn.run(app, host=api_host, port=api_port)

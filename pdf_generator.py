@@ -1,6 +1,11 @@
 """
 PDF Generator - Generar fichas de candidatos con ReportLab
 """
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
@@ -10,7 +15,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from datetime import datetime
 from sqlalchemy.orm import Session
-from models import Candidato, ScoreCandidata, TestPsicometrico
+from models import AssessmentCenter, AssessmentScore, Candidato, CandidatoPerfil, CompatibilidadCandidato, ScoreCandidata, TestPsicometrico
+from scoring import SistemaScoring, scoring_final
 import io
 
 
@@ -42,7 +48,22 @@ class GeneradorPDF:
             raise ValueError(f"Candidato '{candidato_id}' no encontrado")
         
         scores = db.query(ScoreCandidata).filter_by(candidato_id=candidato_id).all()
-        
+        assessment_scores = db.query(AssessmentScore).filter_by(candidato_id=candidato_id).all()
+        compatibilidad = db.query(CompatibilidadCandidato).filter_by(candidato_id=candidato_id).first()
+
+        # Score final: se calcula una sola vez aquí y se reutiliza tanto en el
+        # resumen ejecutivo (arriba) como en la sección detallada (abajo).
+        score_final = None
+        clasificacion_final = None
+        if scores:
+            score_tests, _ = scoring_final(db, candidato_id, candidato.vacante_id)
+            if assessment_scores:
+                promedio_assessments = sum(a.score_normalizado for a in assessment_scores) / len(assessment_scores)
+                score_final = round(score_tests * 0.8 + promedio_assessments * 0.2, 1)
+            else:
+                score_final = score_tests
+            clasificacion_final = SistemaScoring._clasificar_score(score_final)
+
         # Crear buffer en memoria
         buffer = io.BytesIO()
         
@@ -126,14 +147,48 @@ class GeneradorPDF:
         # TÍTULO
         elements.append(Paragraph("FICHA TÉCNICA DE EVALUACIÓN", titulo_style))
         elements.append(Spacer(1, 0.1*inch))
-        
+
+        # RESUMEN EJECUTIVO: para que la empresa lo lea en segundos, sin tener
+        # que buscar el score entre el resto de la ficha.
+        if score_final is not None:
+            color_resumen = {
+                "PRIORITARIO": GeneradorPDF.ROJO,
+                "VIABLE": GeneradorPDF.AZUL_INSTITUCIONAL,
+                "CONSIDERAR": GeneradorPDF.ORO,
+                "NO_RECOMENDADO": HexColor("#CC0000"),
+            }.get(clasificacion_final, GeneradorPDF.GRIS_OSCURO)
+
+            resumen_lineas = [
+                f"<font size='22' color='{color_resumen.hexval()}'><b>{score_final}/100</b></font> "
+                f"&nbsp;&nbsp;<font color='{color_resumen.hexval()}'><b>{clasificacion_final}</b></font>"
+            ]
+            if compatibilidad:
+                resumen_lineas.append(
+                    f"<b>Compatibilidad con la vacante:</b> {round(compatibilidad.score_compatibilidad)}/100"
+                )
+                if compatibilidad.resumen:
+                    resumen_lineas.append(compatibilidad.resumen)
+
+            resumen_data = [[Paragraph("<br/>".join(resumen_lineas), normal_style)]]
+            resumen_table = Table(resumen_data, colWidths=[7*inch])
+            resumen_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), HexColor("#F0F4F9")),
+                ('BOX', (0, 0), (-1, -1), 1, GeneradorPDF.AZUL_INSTITUCIONAL),
+                ('LEFTPADDING', (0, 0), (-1, -1), 14),
+                ('TOPPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            elements.append(Paragraph("RESUMEN EJECUTIVO", subtitulo_style))
+            elements.append(resumen_table)
+            elements.append(Spacer(1, 0.2*inch))
+
         # INFORMACIÓN GENERAL
         elements.append(Paragraph("INFORMACIÓN DEL CANDIDATO", subtitulo_style))
         
         info_candidato = [
             [Paragraph("<b>Nombre:</b>", normal_style), Paragraph(candidato.nombre, normal_style)],
             [Paragraph("<b>Email:</b>", normal_style), Paragraph(candidato.email, normal_style)],
-            [Paragraph("<b>Vacante:</b>", normal_style), Paragraph(candidato.vacante_id, normal_style)],
+            [Paragraph("<b>Vacante:</b>", normal_style), Paragraph(candidato.vacante_id or "Bolsa de talento (sin vacante)", normal_style)],
             [Paragraph("<b>Fecha de Evaluación:</b>", normal_style), Paragraph(datetime.now().strftime("%d/%m/%Y"), normal_style)],
         ]
         
@@ -151,7 +206,52 @@ class GeneradorPDF:
         
         elements.append(info_table)
         elements.append(Spacer(1, 0.2*inch))
-        
+
+        # PERFIL DEL CANDIDATO (datos personales, domicilio, formación, experiencia)
+        perfil = db.query(CandidatoPerfil).filter_by(candidato_id=candidato_id).first()
+        if perfil:
+            filas_perfil = [
+                ("Cédula", perfil.cedula),
+                ("Edad", perfil.edad),
+                ("Estado civil", perfil.estado_civil),
+                ("Hijos", f"{perfil.cantidad_hijos} (edades: {perfil.edades_hijos})" if perfil.cantidad_hijos else None),
+                ("Ciudad/Provincia", perfil.ciudad_provincia or perfil.ubicacion),
+                ("Dirección exacta", perfil.direccion_exacta),
+                ("Contacto de emergencia", f"{perfil.contacto_emergencia_nombre} - {perfil.contacto_emergencia_telefono}" if perfil.contacto_emergencia_nombre or perfil.contacto_emergencia_telefono else None),
+                ("Nivel académico", perfil.nivel_academico),
+                ("Carrera", perfil.carrera),
+                ("Universidad", perfil.universidad),
+                ("Años de experiencia", perfil.anos_experiencia),
+                ("Último cargo", perfil.ultimo_cargo),
+                ("Último salario", perfil.ultimo_salario),
+                ("Funciones último empleo", perfil.funciones_ultimo_empleo),
+                ("Expectativa salarial", perfil.pretension_salarial),
+                ("Disponibilidad", perfil.disponibilidad),
+                ("Cómo se enteró de la vacante", perfil.fuente_reclutamiento),
+                ("Otras posiciones de interés", perfil.posiciones_interes),
+            ]
+            filas_con_datos = [(etiqueta, valor) for etiqueta, valor in filas_perfil if valor not in (None, "")]
+
+            if filas_con_datos:
+                elements.append(Paragraph("PERFIL DEL CANDIDATO", subtitulo_style))
+                perfil_data = [
+                    [Paragraph(f"<b>{etiqueta}:</b>", normal_style), Paragraph(str(valor), normal_style)]
+                    for etiqueta, valor in filas_con_datos
+                ]
+                perfil_table = Table(perfil_data, colWidths=[1.8*inch, 4.7*inch])
+                perfil_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, -1), HexColor("#F5F5F5")),
+                    ('GRID', (0, 0), (-1, -1), 0.5, GeneradorPDF.GRIS_PLATA),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('TOPPADDING', (0, 0), (-1, -1), 6),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ]))
+                elements.append(perfil_table)
+                elements.append(Spacer(1, 0.2*inch))
+
         # SCORES POR TEST
         elements.append(Paragraph("RESULTADOS POR TEST", subtitulo_style))
         
@@ -207,56 +307,46 @@ class GeneradorPDF:
         
         elements.append(Spacer(1, 0.2*inch))
         
-        # SCORE FINAL
-        if scores:
-            # Calcular score final ponderado
-            categorias = {
-                "competencias": [],
-                "psicometricos": [],
-                "cognitivos": [],
-            }
-            
-            categoria_map = {
-                "verbal": "cognitivos",
-                "numerico": "cognitivos",
-                "big_five": "psicometricos",
-                "ie": "psicometricos",
-                "motivacion": "psicometricos",
-                "valores": "psicometricos",
-                "liderazgo": "psicometricos",
-                "competencias": "competencias",
-                "atencion": "cognitivos",
-            }
-            
-            for score in scores:
-                cat = categoria_map.get(score.test_id, "otros")
-                if cat in categorias:
-                    categorias[cat].append(score.score_normalizado)
-            
-            pesos = {"competencias": 0.35, "psicometricos": 0.35, "cognitivos": 0.30}
-            
-            score_final = (
-                (sum(categorias.get("competencias", [0])) / len(categorias["competencias"]) if categorias["competencias"] else 0) * pesos["competencias"] +
-                (sum(categorias.get("psicometricos", [0])) / len(categorias["psicometricos"]) if categorias["psicometricos"] else 0) * pesos["psicometricos"] +
-                (sum(categorias.get("cognitivos", [0])) / len(categorias["cognitivos"]) if categorias["cognitivos"] else 0) * pesos["cognitivos"]
-            )
-            
-            score_final = round(score_final, 1)
-            
-            # Clasificación final
-            if score_final >= 81:
-                clasificacion_final = "PRIORITARIO"
-                color_final = GeneradorPDF.ROJO
-            elif score_final >= 61:
-                clasificacion_final = "VIABLE"
-                color_final = GeneradorPDF.AZUL_INSTITUCIONAL
-            elif score_final >= 41:
-                clasificacion_final = "CONSIDERAR"
-                color_final = GeneradorPDF.ORO
-            else:
-                clasificacion_final = "NO RECOMENDADO"
-                color_final = HexColor("#CC0000")
-            
+        # ASSESSMENT CENTERS (evaluados por IA)
+        if assessment_scores:
+            elements.append(Paragraph("ASSESSMENT CENTERS (Evaluación por IA)", subtitulo_style))
+
+            assessment_data = [[
+                Paragraph("<b>Escenario</b>", normal_style),
+                Paragraph("<b>Score</b>", normal_style),
+                Paragraph("<b>Feedback</b>", normal_style),
+            ]]
+            for a_score in assessment_scores:
+                assessment = db.query(AssessmentCenter).filter_by(id=a_score.assessment_id).first()
+                assessment_data.append([
+                    Paragraph(assessment.nombre if assessment else str(a_score.assessment_id), normal_style),
+                    Paragraph(f"{a_score.score_normalizado:.1f}", normal_style),
+                    Paragraph(a_score.feedback_llm or "", normal_style),
+                ])
+
+            assessment_table = Table(assessment_data, colWidths=[2.5*inch, 1*inch, 3*inch])
+            assessment_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), GeneradorPDF.AZUL_INSTITUCIONAL),
+                ('TEXTCOLOR', (0, 0), (-1, 0), white),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 0.5, GeneradorPDF.GRIS_PLATA),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            elements.append(assessment_table)
+            elements.append(Spacer(1, 0.2*inch))
+
+        # SCORE FINAL (ya calculado arriba, junto con el resumen ejecutivo)
+        if score_final is not None:
+            color_final = {
+                "PRIORITARIO": GeneradorPDF.ROJO,
+                "VIABLE": GeneradorPDF.AZUL_INSTITUCIONAL,
+                "CONSIDERAR": GeneradorPDF.ORO,
+                "NO_RECOMENDADO": HexColor("#CC0000"),
+            }.get(clasificacion_final, GeneradorPDF.GRIS_OSCURO)
+
             score_final_data = [
                 [
                     Paragraph("<b>SCORE FINAL</b>", subtitulo_style),

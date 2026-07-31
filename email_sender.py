@@ -1,6 +1,11 @@
 """
 Email Sender - Enviar reportes por email automáticamente
 """
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import smtplib
 import base64
 from email.mime.text import MIMEText
@@ -16,8 +21,8 @@ class EnviadorEmail:
     # Configuración SMTP (cambiar en producción)
     SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USER = os.getenv("SMTP_USER", "demo@cenerhconsulting.com")
-    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "demo_password")
+    SMTP_USER = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
     
     REMITENTE_NAME = "CENERH Consulting"
     REMITENTE_EMAIL = "reportes@cenerhconsulting.com"
@@ -110,34 +115,32 @@ class EnviadorEmail:
             pdf_attachment["Content-Disposition"] = "attachment; filename=Evaluacion_Candidato.pdf"
             mensaje.attach(pdf_attachment)
             
-            # Enviar (modo MOCK - no envía realmente)
-            print(f"📧 EMAIL SIMULADO (MOCK MODE):")
-            print(f"   De: {EnviadorEmail.REMITENTE_EMAIL}")
-            print(f"   Para: {email_destinatario}")
-            print(f"   Asunto: Evaluación Completada - {nombre_candidato}")
-            print(f"   Adjunto: PDF ({len(pdf_bytes)} bytes)")
-            print(f"   Status: SIMULADO (En producción, usar SMTP real)")
-            
-            # En producción, descomentar para envío real:
-            """
+            if not EnviadorEmail.SMTP_USER or not EnviadorEmail.SMTP_PASSWORD:
+                # Sin credenciales SMTP configuradas: modo simulado (no bloquea el flujo local)
+                print(f"📧 EMAIL SIMULADO (MOCK MODE - falta SMTP_USER/SMTP_PASSWORD en .env):")
+                print(f"   Para: {email_destinatario}")
+                print(f"   Asunto: Evaluación Completada - {nombre_candidato}")
+                print(f"   Adjunto: PDF ({len(pdf_bytes)} bytes)")
+                return {
+                    "status": "success",
+                    "mensaje": f"Email simulado para {email_destinatario} (configura SMTP_USER/SMTP_PASSWORD para envío real)",
+                    "modo": "simulado (mock)",
+                }
+
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
             try:
-                server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
                 server.starttls()
                 server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
                 server.send_message(mensaje)
+            finally:
                 server.quit()
-                print(f"✅ Email enviado a {email_destinatario}")
-            except smtplib.SMTPException as e:
-                print(f"❌ Error SMTP: {e}")
-                raise
-            """
-            
+
             return {
                 "status": "success",
                 "mensaje": f"Email enviado a {email_destinatario}",
-                "modo": "simulado (mock)",
+                "modo": "real",
             }
-            
+
         except Exception as e:
             return {
                 "status": "error",

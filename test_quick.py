@@ -3,6 +3,11 @@ test_quick.py - Testing rápido de endpoints
 No requiere pytest, solo requests
 """
 
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import requests
 import json
 
@@ -18,7 +23,7 @@ def test_health():
     print("   ✓ PASSED\n")
 
 def test_tests_disponibles():
-    """Obtener lista de 9 tests"""
+    """Obtener banco completo de tests (9 base + 5 de Roles Estratégicos)"""
     print("✅ TEST 2: GET /api/tests/disponibles")
     r = requests.get(f"{BASE_URL}/api/tests/disponibles")
     print(f"   Status: {r.status_code}")
@@ -29,8 +34,8 @@ def test_tests_disponibles():
     for test in data['tests']:
         print(f"      - {test['nombre']} ({test['num_preguntas']} preg)")
     assert r.status_code == 200
-    assert data['total_tests'] == 9
-    assert data['total_preguntas'] == 300
+    assert data['total_tests'] == 14
+    assert data['total_preguntas'] == 340
     print("   ✓ PASSED\n")
 
 def test_test_info():
@@ -117,11 +122,11 @@ def main():
         print("=" * 70)
         print("\n📊 Resumen:")
         print("   ✓ API funcionando correctamente")
-        print("   ✓ 9 tests cargados")
-        print("   ✓ 300 preguntas disponibles")
+        print("   ✓ 14 tests cargados (9 base + 5 Roles Estratégicos)")
+        print("   ✓ 340 preguntas disponibles")
         print("   ✓ Endpoints de lectura funcionando")
         print("   ✓ Error handling correcto")
-        print("\n🚀 API lista para FASE 2: Endpoints de escritura + Scoring\n")
+        print("\n🚀 API funcionando - Fase 1 (multi-portal)\n")
         
     except AssertionError as e:
         print(f"\n❌ TEST FALLÓ: {e}\n")

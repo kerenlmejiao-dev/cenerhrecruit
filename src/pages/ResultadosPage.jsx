@@ -4,15 +4,67 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { candidatosAPI } from '../services/api';
+
+const ETAPAS_PROCESO = ['Aplicación recibida', 'En evaluación', 'Preseleccionado', 'Entrevista', 'Decisión final'];
+
+function StatusReclutamiento({ status }) {
+  if (status === 'Rechazado') {
+    return (
+      <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 mb-8 text-center">
+        <p className="text-gray-800 font-semibold">Tu proceso para esta posición ha finalizado</p>
+        <p className="text-gray-600 text-sm mt-1">Gracias por tu interés. Te invitamos a aplicar a futuras vacantes que encajen con tu perfil.</p>
+      </div>
+    );
+  }
+
+  if (status === 'Contratado') {
+    return (
+      <div className="bg-green-50 border border-green-300 rounded-lg p-6 mb-8 text-center">
+        <p className="text-green-800 font-bold text-lg">¡Felicidades, fuiste seleccionado! 🎉</p>
+        <p className="text-green-700 text-sm mt-1">Pronto se pondrán en contacto contigo con los siguientes pasos.</p>
+      </div>
+    );
+  }
+
+  const indiceActual = ETAPAS_PROCESO.indexOf(status);
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">¿Cómo vas en el proceso?</h2>
+      <div className="flex items-center">
+        {ETAPAS_PROCESO.map((etapa, i) => {
+          const completada = indiceActual >= 0 && i < indiceActual;
+          const actual = i === indiceActual;
+          return (
+            <div key={etapa} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center gap-1 text-center w-24">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  completada ? 'bg-blue-600 text-white' :
+                  actual ? 'bg-blue-600 text-white ring-4 ring-blue-200' :
+                  'bg-gray-200 text-gray-500'
+                }`}>
+                  {completada ? '✓' : i + 1}
+                </div>
+                <span className={`text-xs ${actual ? 'font-bold text-blue-700' : 'text-gray-500'}`}>{etapa}</span>
+              </div>
+              {i < ETAPAS_PROCESO.length - 1 && (
+                <div className={`flex-1 h-0.5 ${completada ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function ResultadosPage() {
   const navigate = useNavigate();
   const [datos, setDatos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [descargando, setDescargando] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   const candidatoId = localStorage.getItem('candidatoId');
@@ -36,20 +88,6 @@ export default function ResultadosPage() {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const descargarPDF = async () => {
-    try {
-      setDescargando(true);
-      const resultado = await candidatosAPI.generarPDF(candidatoId);
-
-      // Crear descarga (simular)
-      alert(`PDF generado: ${resultado.tamaño_kb} KB\n\nEn producción, el PDF se descargará automáticamente.`);
-    } catch (err) {
-      alert('Error al generar PDF');
-    } finally {
-      setDescargando(false);
     }
   };
 
@@ -109,6 +147,8 @@ export default function ResultadosPage() {
           <div className="text-4xl font-bold text-white mb-2">¡Evaluación Completa!</div>
           <p className="text-blue-100">Hola, {candidatoNombre}</p>
         </div>
+
+        <StatusReclutamiento status={datos.status_reclutamiento} />
 
         {/* Score Final */}
         <div className={`${clasificacion.bg} ${clasificacion.border} border-2 rounded-lg shadow-xl p-8 mb-8`}>
@@ -177,15 +217,35 @@ export default function ResultadosPage() {
           </div>
         )}
 
+        {/* Assessment Centers */}
+        {datos.assessments && datos.assessments.length > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Assessment Centers</h2>
+            <div className="space-y-4">
+              {datos.assessments.map((a) => (
+                <div key={a.assessment_id} className="border border-purple-200 bg-purple-50 rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-gray-900">{a.nombre}</h3>
+                    <div className="text-2xl font-bold text-purple-700">{a.score}</div>
+                  </div>
+                  {a.feedback && <p className="text-sm text-gray-700">{a.feedback}</p>}
+                </div>
+              ))}
+            </div>
+            <Link to="/como-usamos-la-ia" target="_blank" className="text-xs text-purple-700 hover:text-purple-900 underline mt-3 inline-block">
+              Cómo la IA analizó tu respuesta
+            </Link>
+          </div>
+        )}
+
         {/* Acciones */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <button
-            onClick={descargarPDF}
-            disabled={descargando}
-            className="bg-white hover:bg-gray-50 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
+            onClick={() => navigate('/perfil?retorno=resultados')}
+            className="bg-white hover:bg-gray-50 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2"
           >
-            <span>📄</span>
-            {descargando ? 'Generando PDF...' : 'Descargar PDF'}
+            <span>✏️</span>
+            Corregir o actualizar mis datos
           </button>
 
           <button

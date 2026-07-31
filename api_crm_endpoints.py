@@ -8,9 +8,14 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Candidato
 from crm_service import hubspot_service, pipedrive_service, EstadoCRM
+from auth import require_admin
 from typing import Optional
 
-router = APIRouter(prefix="/api/crm", tags=["CRM Integration"])
+# Nota: todos los endpoints de este router requieren la API key de admin
+# (header X-Admin-Key). Este módulo no está montado en api.py todavía
+# (falta el módulo `database`); si se conecta en el futuro, ya queda
+# protegido por defecto.
+router = APIRouter(prefix="/api/crm", tags=["CRM Integration"], dependencies=[Depends(require_admin)])
 
 
 # ============================================================================

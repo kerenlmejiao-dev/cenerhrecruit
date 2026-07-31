@@ -2,6 +2,9 @@
  * CENERH RECRUIT OS - Estilos Tailwind
  */
 
+/* Tipografía (un @import debe preceder cualquier otra regla CSS) */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,9 +17,6 @@
   --color-negro: #0D0D0D;
   --color-gris: #B8BFC7;
 }
-
-/* Tipografía */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@400;600;700&display=swap');
 
 body {
   font-family: 'Montserrat', sans-serif;

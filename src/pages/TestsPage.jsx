@@ -67,12 +67,14 @@ export default function TestsPage() {
   const cargarPreguntas = async (testId) => {
     try {
       setLoading(true);
+      setError('');
       const data = await testsAPI.obtenerPreguntas(testId, candidatoId);
       setPreguntas(data.preguntas || []);
       setRespuestas({});
       setProgreso(0);
     } catch (err) {
       setError('Error al cargar preguntas');
+      setPreguntas([]);
       console.error(err);
     } finally {
       setLoading(false);
@@ -98,7 +100,7 @@ export default function TestsPage() {
     } else {
       // Último test completado
       await guardarRespuestasTest(tests[testActual].id);
-      navigate('/resultados');
+      navigate('/assessments');
     }
   };
 
@@ -189,22 +191,22 @@ export default function TestsPage() {
               </div>
 
               {/* Opciones */}
-              {pregunta.opciones && pregunta.opciones.length > 0 ? (
+              {pregunta.opciones && Object.keys(pregunta.opciones).length > 0 ? (
                 <div className="space-y-3 ml-12">
-                  {pregunta.opciones.map((opcion, idx) => (
+                  {Object.entries(pregunta.opciones).map(([letra, texto]) => (
                     <label
-                      key={idx}
+                      key={letra}
                       className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
                     >
                       <input
                         type="radio"
                         name={pregunta.id}
-                        value={String.fromCharCode(65 + idx)}
-                        checked={respuestas[pregunta.id] === String.fromCharCode(65 + idx)}
+                        value={letra}
+                        checked={respuestas[pregunta.id] === letra}
                         onChange={(e) => handleRespuesta(pregunta.id, e.target.value)}
                         className="w-5 h-5 text-blue-600"
                       />
-                      <span className="ml-3 text-gray-700">{opcion}</span>
+                      <span className="ml-3 text-gray-700"><strong>{letra}.</strong> {texto}</span>
                     </label>
                   ))}
                 </div>

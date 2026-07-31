@@ -2,6 +2,11 @@
 # Script para cargar 18 competencias + 90 preguntas en BD
 # Ejecutar UNA SOLA VEZ en inicialización
 
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 from models_competencias import Competencia, PreguntaCompetencia
 
 # ============================================================================

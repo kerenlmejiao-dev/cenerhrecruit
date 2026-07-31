@@ -3,6 +3,7 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.9.2
 pydantic-settings==2.5.2
+email-validator==2.2.0
 
 # Database
 sqlalchemy==2.0.36
@@ -19,9 +20,16 @@ python-multipart==0.0.6
 # Environment
 python-dotenv==1.0.0
 
+# IA (scoring de Assessment Centers)
+anthropic==0.39.0
+
+# Pagos (dLocal - suscripciones + desbloqueo de candidatos)
+# Usa el paquete "requests" (ya incluido arriba) para llamar a la API REST de dLocal.
+
 # Security
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
+bcrypt==4.0.1
 cryptography==41.0.7
 
 # CORS
@@ -38,6 +46,7 @@ click==8.1.7
 pytest==7.4.3
 pytest-asyncio==0.21.1
 httpx==0.25.2
+requests==2.31.0
 
 # Monitoring (optional)
 prometheus-client==0.19.0

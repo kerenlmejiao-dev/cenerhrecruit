@@ -13,17 +13,34 @@ from typing import Dict, List, Tuple
 class SistemaScoring:
     """Sistema de scoring ponderado para CENERH RECRUIT OS"""
     
-    # Mapeo de tipos de test a categorías de peso
+    # Mapeo de tipos de test a categorías de peso.
+    # IMPORTANTE: estos valores deben coincidir exactamente con las claves de los
+    # diccionarios "categorias"/PESOS_DEFAULT ("cognitivos"/"psicometricos", en
+    # plural) - un desajuste singular/plural aquí hace que el test quede
+    # silenciosamente excluido del score final ponderado.
     CATEGORIA_TEST = {
-        "verbal": "cognitivo",
-        "numerico": "cognitivo",
-        "big_five": "psicometrico",
-        "ie": "psicometrico",
-        "motivacion": "psicometrico",
-        "valores": "psicometrico",
-        "liderazgo": "psicometrico",
+        "verbal": "cognitivos",
+        "numerico": "cognitivos",
+        "atencion": "cognitivos",
+        "big_five": "psicometricos",
+        "ie": "psicometricos",
+        "motivacion": "psicometricos",
+        "valores": "psicometricos",
+        "liderazgo": "psicometricos",
         "competencias": "competencias",
-        "atencion": "atencion",  # Puede ir en cognitivo o atencion (flexible)
+        # Roles Estratégicos (banco de tests Fase 1) - Likert, se agrupan como psicometricos
+        "rol_supervision": "psicometricos",
+        "rol_liderazgo_ejecutivo": "psicometricos",
+        "rol_ventas": "psicometricos",
+        "rol_mercadeo": "psicometricos",
+        "rol_desarrollo_negocios": "psicometricos",
+        # Bancos por Industria (Fase 3) - opción múltiple con respuesta correcta,
+        # se agrupan como cognitivos (mismo criterio de scoring por aciertos)
+        "industria_salud": "cognitivos",
+        "industria_tecnologia": "cognitivos",
+        "industria_construccion": "cognitivos",
+        "industria_energia": "cognitivos",
+        "industria_hoteleria": "cognitivos",
     }
     
     # Pesos por defecto (Opción A)

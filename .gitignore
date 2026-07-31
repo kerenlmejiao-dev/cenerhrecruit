@@ -61,6 +61,13 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Base de datos local (contiene datos personales de candidatos - nunca commitear)
+*.db
+*.db-journal
+
+# CVs subidos por candidatos (datos personales - nunca commitear)
+uploads/
+
 # Flask stuff:
 instance/
 .webassets-cache
@@ -149,6 +156,8 @@ activemq-data/
 
 # Environments
 .env
+.env.local
+.env.*.local
 .envrc
 .venv
 env/
@@ -156,6 +165,11 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Node / frontend (Vite)
+node_modules/
+.env.local
+dist-frontend/
 
 # Spyder project settings
 .spyderproject

@@ -21,12 +21,13 @@ class TestPsicometrico(Base):
     nombre = Column(String(100), nullable=False)
     descripcion = Column(Text, nullable=True)
     num_preguntas = Column(Integer, nullable=False)
-    tipo = Column(String(50), nullable=False)  # "cognitivo", "psicometrico", "competencias", "atencion"
+    tipo = Column(String(50), nullable=False)  # "cognitivo", "psicometrico", "competencias", "atencion" (categoría de SCORING)
+    categoria_banco = Column(String(50), nullable=True)  # "Numérico", "Cognitivo", "Atención", "Personalidad", "Roles Estratégicos" (categoría de EXHIBICIÓN en el banco)
     calidad_psicometrica = Column(Float, default=90.0)  # Score 0-100
     tiempo_estimado = Column(Integer, nullable=False)  # segundos
     creado_en = Column(DateTime, default=datetime.utcnow)
     actualizado_en = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relaciones
     preguntas = relationship("PreguntaTest", back_populates="test")
     
@@ -69,14 +70,27 @@ class Vacante(Base):
     nombre = Column(String(100), nullable=False)
     cliente = Column(String(100), nullable=False)
     descripcion = Column(Text, nullable=True)
-    tests_a_aplicar = Column(JSON, nullable=False)  # ["verbal", "numerico", "competencias", ...]
+    # Requisitos/competencias en texto libre, usados por la IA para el
+    # análisis de compatibilidad candidato-vacante (ver assessment_service.py).
+    requisitos = Column(Text, nullable=True)
+    tests_a_aplicar = Column(JSON, nullable=False)  # ["verbal", "numerico", "competencias", ...] (legado, ver vacante_tests)
     pesos_scoring = Column(JSON, nullable=False)  # {"competencias": 0.35, "psico": 0.35, "cognitivo": 0.30}
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=True)
+    creado_por_usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    # Ciclo de vida del proceso de búsqueda:
+    #   "borrador"  -> no ha iniciado, no acepta aplicaciones, no aparece en el listado público
+    #   "activa"    -> proceso abierto, acepta aplicaciones (listado público + link directo)
+    #   "inactiva"  -> proceso finalizado, ya no acepta aplicaciones (se puede reabrir)
+    estado = Column(String(20), default="borrador")
     creado_en = Column(DateTime, default=datetime.utcnow)
     actualizado_en = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relaciones
     candidatos = relationship("Candidato", back_populates="vacante")
-    
+    empresa = relationship("Empresa", back_populates="vacantes")
+    vacante_tests = relationship("VacanteTest", back_populates="vacante", order_by="VacanteTest.orden")
+    vacante_assessments = relationship("VacanteAssessment", back_populates="vacante")
+
     def __repr__(self):
         return f"<Vacante {self.nombre} ({', '.join(self.tests_a_aplicar)})>"
 
@@ -88,11 +102,17 @@ class Candidato(Base):
     __tablename__ = "candidatos"
     
     id = Column(String(50), primary_key=True)  # UUID
-    vacante_id = Column(String(50), ForeignKey("vacantes.id"), nullable=False)
+    # Nulo = perfil de bolsa de talento: completó sus datos sin aplicar a una
+    # vacante específica todavía.
+    vacante_id = Column(String(50), ForeignKey("vacantes.id"), nullable=True)
     nombre = Column(String(100), nullable=False)
     email = Column(String(100), nullable=False)
     telefono = Column(String(20), nullable=True)
-    estado = Column(String(20), default="iniciado")  # "iniciado", "en_progreso", "completado", "rechazado"
+    estado = Column(String(20), default="iniciado")  # técnico: "iniciado", "en_progreso", "completado", "rechazado"
+    # Etapa del proceso de reclutamiento, visible para el candidato y editada a
+    # mano por el reclutador (distinto de "estado", que es solo si ya completó
+    # los tests). Ver STATUS_RECLUTAMIENTO_VALIDOS en reclutador_router.py.
+    status_reclutamiento = Column(String(40), default="Aplicación recibida")
     fecha_inicio = Column(DateTime, default=datetime.utcnow)
     fecha_completitud = Column(DateTime, nullable=True)
     score_final = Column(Float, nullable=True)  # 0-100
@@ -102,7 +122,8 @@ class Candidato(Base):
     vacante = relationship("Vacante", back_populates="candidatos")
     respuestas = relationship("RespuestaCandidata", back_populates="candidato")
     scores = relationship("ScoreCandidata", back_populates="candidato")
-    
+    perfil = relationship("CandidatoPerfil", back_populates="candidato", uselist=False)
+
     def __repr__(self):
         return f"<Candidato {self.nombre} - Score: {self.score_final}>"
 
@@ -200,6 +221,300 @@ class AuditLog(Base):
     
     def __repr__(self):
         return f"<AuditLog {self.candidato_id} - {self.accion}>"
+
+
+# ============================================================================
+# TABLA: Empresas (Clientes que publican vacantes)
+# ============================================================================
+class Empresa(Base):
+    __tablename__ = "empresas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(150), nullable=False)
+    contacto_email = Column(String(150), nullable=True)
+    activo = Column(Boolean, default=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+
+    # Datos de facturación. Los levanta el reclutador al crear la empresa
+    # (no la empresa por autorregistro) porque afectan cómo se factura el
+    # desbloqueo de candidatos y la suscripción.
+    razon_social = Column(String(200), nullable=True)
+    tiene_rnc = Column(Boolean, default=False)
+    rnc = Column(String(30), nullable=True)  # Registro Nacional de Contribuyente / comprobante fiscal
+
+    # Relaciones
+    usuarios = relationship("Usuario", back_populates="empresa")
+    vacantes = relationship("Vacante", back_populates="empresa")
+
+    def __repr__(self):
+        return f"<Empresa {self.nombre}>"
+
+
+# ============================================================================
+# TABLA: Usuarios (Cuentas de reclutador/empresa/owner - creadas solo por admin)
+# ============================================================================
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(150), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    nombre = Column(String(150), nullable=False)
+    rol = Column(String(20), nullable=False)  # "owner", "reclutador", "empresa"
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=True)  # solo para rol="empresa"
+    documento = Column(String(30), nullable=True)  # cédula/RNC - requerido por dLocal para pagos con tarjeta en RD
+    activo = Column(Boolean, default=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+    ultimo_login = Column(DateTime, nullable=True)
+
+    # Relaciones
+    empresa = relationship("Empresa", back_populates="usuarios")
+
+    def __repr__(self):
+        return f"<Usuario {self.email} ({self.rol})>"
+
+
+# ============================================================================
+# TABLA: Vacante-Tests (Relación M:N - qué tests aplica cada vacante)
+# ============================================================================
+class VacanteTest(Base):
+    __tablename__ = "vacante_tests"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    vacante_id = Column(String(50), ForeignKey("vacantes.id"), nullable=False)
+    test_id = Column(String(50), ForeignKey("tests_psicometricos.id"), nullable=False)
+    orden = Column(Integer, nullable=True)
+    obligatorio = Column(Boolean, default=True)
+    peso_override = Column(Float, nullable=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    vacante = relationship("Vacante", back_populates="vacante_tests")
+    test = relationship("TestPsicometrico")
+
+    def __repr__(self):
+        return f"<VacanteTest {self.vacante_id} -> {self.test_id}>"
+
+
+# ============================================================================
+# TABLA: Perfil extendido del Candidato (cuestionario + CV)
+# ============================================================================
+class CandidatoPerfil(Base):
+    __tablename__ = "candidato_perfil"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), unique=True, nullable=False)
+    cv_filename = Column(String(255), nullable=True)
+    cv_storage_path = Column(String(500), nullable=True)
+    cv_texto_extraido = Column(Text, nullable=True)
+    pretension_salarial = Column(String(50), nullable=True)
+    ubicacion = Column(String(150), nullable=True)
+    tiene_vehiculo = Column(Boolean, nullable=True)
+    tiene_visa = Column(Boolean, nullable=True)
+    disponibilidad = Column(String(50), nullable=True)
+    campos_dinamicos = Column(JSON, nullable=True)
+
+    # Datos personales
+    cedula = Column(String(20), nullable=True)
+    edad = Column(Integer, nullable=True)
+    estado_civil = Column(String(30), nullable=True)
+    cantidad_hijos = Column(Integer, nullable=True)
+    edades_hijos = Column(String(200), nullable=True)  # texto libre, ej. "5, 8, 12"
+
+    # Domicilio (más específico que "ubicacion")
+    ciudad_provincia = Column(String(100), nullable=True)
+    direccion_exacta = Column(Text, nullable=True)
+
+    # Formación académica
+    nivel_academico = Column(String(50), nullable=True)
+    carrera = Column(String(150), nullable=True)
+    universidad = Column(String(150), nullable=True)
+
+    # Experiencia laboral
+    anos_experiencia = Column(Integer, nullable=True)
+    ultimo_cargo = Column(String(150), nullable=True)
+    ultimo_salario = Column(String(50), nullable=True)
+    funciones_ultimo_empleo = Column(Text, nullable=True)
+
+    # Contexto de la aplicación (útil para la base de datos de candidatos)
+    fuente_reclutamiento = Column(String(100), nullable=True)  # cómo se enteró de la vacante
+    posiciones_interes = Column(Text, nullable=True)  # otras posiciones que le interesan
+    contacto_emergencia_nombre = Column(String(150), nullable=True)
+    contacto_emergencia_telefono = Column(String(30), nullable=True)
+    actualizado_en = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relaciones
+    candidato = relationship("Candidato", back_populates="perfil")
+
+    def __repr__(self):
+        return f"<CandidatoPerfil {self.candidato_id}>"
+
+
+# ============================================================================
+# TABLA: Assessment Centers (Bancos de escenarios de respuesta abierta)
+# ============================================================================
+class AssessmentCenter(Base):
+    __tablename__ = "assessment_centers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(150), nullable=False)
+    descripcion = Column(Text, nullable=True)
+    categoria = Column(String(50), nullable=True)  # rol estratégico: "Supervisión", "Liderazgo", "Ventas", "Mercadeo", "Desarrollo de Negocios"
+    activo = Column(Boolean, default=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    preguntas = relationship("AssessmentPregunta", back_populates="assessment")
+
+    def __repr__(self):
+        return f"<AssessmentCenter {self.nombre}>"
+
+
+class AssessmentPregunta(Base):
+    __tablename__ = "assessment_preguntas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    assessment_id = Column(Integer, ForeignKey("assessment_centers.id"), nullable=False)
+    numero = Column(Integer, nullable=False)
+    escenario = Column(Text, nullable=False)
+    rubrica_json = Column(JSON, nullable=False)  # criterios de evaluación para el prompt de la IA
+
+    # Relaciones
+    assessment = relationship("AssessmentCenter", back_populates="preguntas")
+
+    def __repr__(self):
+        return f"<AssessmentPregunta {self.assessment_id}#{self.numero}>"
+
+
+class AssessmentRespuesta(Base):
+    __tablename__ = "assessment_respuestas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=False)
+    assessment_pregunta_id = Column(Integer, ForeignKey("assessment_preguntas.id"), nullable=False)
+    respuesta_texto = Column(Text, nullable=False)
+    respondido_en = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<AssessmentRespuesta {self.candidato_id} - pregunta {self.assessment_pregunta_id}>"
+
+
+class AssessmentScore(Base):
+    __tablename__ = "assessment_scores"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=False)
+    assessment_id = Column(Integer, ForeignKey("assessment_centers.id"), nullable=False)
+    score_normalizado = Column(Float, nullable=False)  # 0-100
+    feedback_llm = Column(Text, nullable=True)
+    criterios_detalle = Column(JSON, nullable=True)
+    modelo_usado = Column(String(100), nullable=True)
+    revisado_por_humano = Column(Boolean, default=False)  # el score de IA no debe usarse ciego para contratar
+    calculado_en = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<AssessmentScore {self.candidato_id} - {self.assessment_id}: {self.score_normalizado}/100>"
+
+
+class CompatibilidadCandidato(Base):
+    """Análisis de IA que compara el perfil del candidato (residencia,
+    experiencia, formación) contra los requisitos de la vacante a la que
+    aplicó. Igual que AssessmentScore, es apoyo para decidir, no un
+    filtro automático."""
+    __tablename__ = "compatibilidad_candidatos"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=False, unique=True)
+    score_compatibilidad = Column(Float, nullable=False)  # 0-100
+    resumen = Column(Text, nullable=True)
+    fortalezas = Column(JSON, nullable=True)  # lista de strings
+    brechas = Column(JSON, nullable=True)  # lista de strings
+    modelo_usado = Column(String(100), nullable=True)
+    calculado_en = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<CompatibilidadCandidato {self.candidato_id}: {self.score_compatibilidad}/100>"
+
+
+class VacanteAssessment(Base):
+    __tablename__ = "vacante_assessments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    vacante_id = Column(String(50), ForeignKey("vacantes.id"), nullable=False)
+    assessment_id = Column(Integer, ForeignKey("assessment_centers.id"), nullable=False)
+    obligatorio = Column(Boolean, default=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    vacante = relationship("Vacante", back_populates="vacante_assessments")
+    assessment = relationship("AssessmentCenter")
+
+    def __repr__(self):
+        return f"<VacanteAssessment {self.vacante_id} -> {self.assessment_id}>"
+
+
+# ============================================================================
+# TABLA: Suscripciones (reclutadores - planes Básico/Pro/Enterprise)
+# ============================================================================
+class Suscripcion(Base):
+    __tablename__ = "suscripciones"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    plan = Column(String(20), nullable=False)  # "basico", "pro", "enterprise"
+    precio_mensual = Column(Float, nullable=False)
+    # "vencida" = fecha_renovacion ya pasó y no se ha pagado (ni manual ni automático).
+    estado = Column(String(20), default="pendiente")  # "pendiente", "activa", "vencida", "cancelada"
+    # Si es True, se intenta recobrar automáticamente al vencer (requiere que
+    # dLocal soporte cobro recurrente con el método de pago guardado del
+    # reclutador; el cobro real todavía no está implementado, ver pagos_router.py).
+    renovacion_automatica = Column(Boolean, default=False)
+    fecha_inicio = Column(DateTime, nullable=True)
+    fecha_renovacion = Column(DateTime, nullable=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+    actualizado_en = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Suscripcion usuario={self.usuario_id} plan={self.plan} estado={self.estado}>"
+
+
+# ============================================================================
+# TABLA: Transacciones (log de todos los cobros - suscripción y desbloqueo)
+# ============================================================================
+class Transaccion(Base):
+    __tablename__ = "transacciones"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tipo = Column(String(30), nullable=False)  # "suscripcion", "desbloqueo_candidato"
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)  # reclutador (suscripción)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=True)  # empresa (desbloqueo)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=True)
+    monto = Column(Float, nullable=False)
+    moneda = Column(String(10), default="DOP")
+    order_id = Column(String(150), nullable=False, unique=True)  # ID generado por nosotros, enviado a dLocal
+    dlocal_payment_id = Column(String(100), nullable=True)  # ID que devuelve dLocal ("id" del payment)
+    estado = Column(String(20), default="pendiente")  # "pendiente", "completada", "fallida", "reembolsada"
+    creado_en = Column(DateTime, default=datetime.utcnow)
+    actualizado_en = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Transaccion {self.tipo} monto={self.monto} estado={self.estado}>"
+
+
+# ============================================================================
+# TABLA: Acceso a Candidatos (qué empresa desbloqueó qué candidato)
+# ============================================================================
+class CandidatoAcceso(Base):
+    __tablename__ = "candidato_accesos"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=False)
+    transaccion_id = Column(Integer, ForeignKey("transacciones.id"), nullable=True)
+    desbloqueado_en = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<CandidatoAcceso empresa={self.empresa_id} candidato={self.candidato_id}>"
 
 
 # ============================================================================
