@@ -209,15 +209,27 @@ export const pagosAPI = {
  * CANDIDATOS
  */
 export const candidatosAPI = {
-  // Crear nuevo candidato
+  // Crear nuevo candidato. Crea (o valida) su cuenta de candidato con la
+  // contraseña dada, y la deja con sesión iniciada (mismas llaves de
+  // localStorage que usa el login de reclutador/empresa).
   crear: async (datos) => {
     const response = await apiClient.post('/api/candidatos', datos);
+    if (response.data.access_token) {
+      localStorage.setItem('authToken', response.data.access_token);
+      localStorage.setItem('authUsuario', JSON.stringify(response.data.usuario));
+    }
     return response.data;
   },
 
   // Obtener resultados
   obtenerResultados: async (candidatoId) => {
     const response = await apiClient.get(`/api/candidatos/${candidatoId}/resultados`);
+    return response.data;
+  },
+
+  // Todas las aplicaciones del candidato autenticado (requiere sesión de candidato)
+  misAplicaciones: async () => {
+    const response = await apiClient.get('/api/candidatos/mis-aplicaciones');
     return response.data;
   },
 

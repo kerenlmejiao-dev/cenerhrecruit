@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { candidatosAPI, vacantesAPI } from '../services/api';
 import { FONT_SANS, FONT_SERIF } from '../theme';
 
@@ -24,6 +24,7 @@ export default function RegistroPage({ modo = 'aplicar' }) {
     nombre: '',
     email: '',
     telefono: '',
+    password: '',
     vacante_id: '',
   });
 
@@ -66,7 +67,7 @@ export default function RegistroPage({ modo = 'aplicar' }) {
 
     try {
       const payload = modo === 'bolsa'
-        ? { nombre: formData.nombre, email: formData.email, telefono: formData.telefono }
+        ? { nombre: formData.nombre, email: formData.email, telefono: formData.telefono, password: formData.password }
         : formData;
       const resultado = await candidatosAPI.crear(payload);
 
@@ -193,6 +194,25 @@ export default function RegistroPage({ modo = 'aplicar' }) {
                 />
               </div>
 
+              {/* Contraseña: crea (o inicia sesión en) tu cuenta de candidato */}
+              <div>
+                <label className={labelClass}>Contraseña *</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={8}
+                  className={inputClass}
+                  placeholder="Mínimo 8 caracteres"
+                />
+                <p className="text-xs text-[#666] mt-1">
+                  Así podrás volver a entrar más adelante sin llenar todo de nuevo. Si ya aplicaste
+                  antes, usa la misma contraseña.
+                </p>
+              </div>
+
               {/* Botón */}
               <button
                 type="submit"
@@ -205,6 +225,12 @@ export default function RegistroPage({ modo = 'aplicar' }) {
               {/* Nota */}
               <p className="text-xs text-[#666] text-center mt-4">
                 * Campos requeridos. Tu información será confidencial.
+              </p>
+              <p className="text-sm text-center text-[#B8BFC7]">
+                ¿Ya tienes cuenta?{' '}
+                <Link to="/login-candidato" className="text-[#C9A14A] hover:text-white font-medium">
+                  Inicia sesión
+                </Link>
               </p>
             </form>
           </div>

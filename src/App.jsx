@@ -14,6 +14,8 @@ import AssessmentsPage from './pages/AssessmentsPage';
 import ResultadosPage from './pages/ResultadosPage';
 import ComoUsamosLaIAPage from './pages/ComoUsamosLaIAPage';
 import LoginPage from './pages/LoginPage';
+import LoginCandidatoPage from './pages/LoginCandidatoPage';
+import MisAplicacionesPage from './pages/MisAplicacionesPage';
 import RegistroReclutadorPage from './pages/RegistroReclutadorPage';
 import RutaProtegida from './components/RutaProtegida';
 import DashboardReclutador from './pages/reclutador/DashboardReclutador';
@@ -54,6 +56,12 @@ export default function App() {
         <Route path="/assessments" element={<AssessmentsPage />} />
         <Route path="/resultados" element={<ResultadosPage />} />
         <Route path="/como-usamos-la-ia" element={<ComoUsamosLaIAPage />} />
+        <Route path="/login-candidato" element={<LoginCandidatoPage />} />
+        <Route path="/mis-aplicaciones" element={
+          <RutaProtegida rolesPermitidos={['candidato']}>
+            <MisAplicacionesPage />
+          </RutaProtegida>
+        } />
 
         {/* Login reclutador/empresa */}
         <Route path="/login" element={<LoginPage />} />

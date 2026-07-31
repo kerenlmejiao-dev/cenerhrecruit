@@ -7,62 +7,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { candidatosAPI } from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
+import { candidatosAPI, authAPI } from '../services/api';
 import { FONT_SANS, FONT_SERIF } from '../theme';
-
-const ETAPAS_PROCESO = ['Aplicación recibida', 'En evaluación', 'Preseleccionado', 'Entrevista', 'Decisión final'];
-
-function StatusReclutamiento({ status }) {
-  if (status === 'Rechazado') {
-    return (
-      <div className="border border-[#2a2a2a] p-6 mb-8 text-center">
-        <p className="text-white font-semibold">Tu proceso para esta posición ha finalizado</p>
-        <p className="text-[#B8BFC7] text-sm mt-1">Gracias por tu interés. Te invitamos a aplicar a futuras vacantes que encajen con tu perfil.</p>
-      </div>
-    );
-  }
-
-  if (status === 'Contratado') {
-    return (
-      <div className="border border-[#C9A14A] p-6 mb-8 text-center">
-        <p className="text-[#C9A14A] font-bold text-lg">¡Felicidades, fuiste seleccionado! 🎉</p>
-        <p className="text-[#B8BFC7] text-sm mt-1">Pronto se pondrán en contacto contigo con los siguientes pasos.</p>
-      </div>
-    );
-  }
-
-  const indiceActual = ETAPAS_PROCESO.indexOf(status);
-
-  return (
-    <div className="border border-[#2a2a2a] p-6 mb-8">
-      <h2 className="text-sm font-semibold text-[#666] uppercase tracking-wide mb-4">¿Cómo vas en el proceso?</h2>
-      <div className="flex items-center">
-        {ETAPAS_PROCESO.map((etapa, i) => {
-          const completada = indiceActual >= 0 && i < indiceActual;
-          const actual = i === indiceActual;
-          return (
-            <div key={etapa} className="flex items-center flex-1 last:flex-none">
-              <div className="flex flex-col items-center gap-1 text-center w-24">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                  completada ? 'bg-[#0050A0] text-white' :
-                  actual ? 'bg-[#D62828] text-white ring-4 ring-[#D62828]/20' :
-                  'bg-[#1f1f1f] text-[#666]'
-                }`}>
-                  {completada ? '✓' : i + 1}
-                </div>
-                <span className={`text-xs ${actual ? 'font-bold text-white' : 'text-[#666]'}`}>{etapa}</span>
-              </div>
-              {i < ETAPAS_PROCESO.length - 1 && (
-                <div className={`flex-1 h-0.5 ${completada ? 'bg-[#0050A0]' : 'bg-[#1f1f1f]'}`}></div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+import StatusReclutamiento from '../components/StatusReclutamiento';
 
 export default function ResultadosPage() {
   const navigate = useNavigate();
@@ -130,10 +78,12 @@ export default function ResultadosPage() {
           <p className="text-[#B8BFC7]">Hola, {candidatoNombre}</p>
         </div>
 
-        <StatusReclutamiento status={datos.status_reclutamiento} />
+        <div className="mb-8">
+          <StatusReclutamiento status={datos.status_reclutamiento} />
+        </div>
 
         {/* Acciones */}
-        <div className="mb-8">
+        <div className="mb-8 flex flex-wrap gap-3">
           <button
             onClick={() => navigate('/perfil?retorno=resultados')}
             className="border border-[#2a2a2a] hover:border-[#C9A14A] text-white font-semibold py-3 px-6 transition flex items-center justify-center gap-2"
@@ -141,6 +91,15 @@ export default function ResultadosPage() {
             <span>✏️</span>
             Corregir o actualizar mis datos
           </button>
+          {authAPI.estaAutenticado() && (
+            <Link
+              to="/mis-aplicaciones"
+              className="border border-[#2a2a2a] hover:border-[#C9A14A] text-white font-semibold py-3 px-6 transition flex items-center justify-center gap-2"
+            >
+              <span>📋</span>
+              Ver todas mis aplicaciones
+            </Link>
+          )}
         </div>
 
         {/* Info */}

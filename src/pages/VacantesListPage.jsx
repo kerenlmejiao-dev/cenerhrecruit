@@ -39,6 +39,12 @@ export default function VacantesListPage() {
             Vacantes disponibles
           </h1>
           <p className="text-[#B8BFC7] mt-2">Elige la posición que te interesa para aplicar</p>
+          <p className="text-[#666] text-xs mt-3">
+            ¿Ya aplicaste antes?{' '}
+            <Link to="/login-candidato" className="text-[#C9A14A] hover:text-white underline">
+              Inicia sesión
+            </Link>
+          </p>
         </div>
 
         {loading && <p className="text-[#666] text-center">Cargando vacantes...</p>}

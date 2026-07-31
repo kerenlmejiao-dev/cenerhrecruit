@@ -95,6 +95,9 @@ class CandidatoCreate(BaseModel):
     nombre: str = Field(..., min_length=1, max_length=200)
     email: EmailStr
     telefono: Optional[str] = Field(default=None, max_length=30)
+    # Crea (o inicia sesión en) su cuenta de candidato, para que pueda volver
+    # a entrar después con email+contraseña en vez de depender del navegador.
+    password: str = Field(..., min_length=8)
 
 
 class RespuestasPayload(BaseModel):
@@ -506,6 +509,7 @@ async def crear_candidato(
     """Crear nuevo candidato"""
     try:
         import uuid
+        from auth_users import create_access_token, hash_password, verify_password
 
         vacante = None
         if datos.vacante_id:
@@ -514,6 +518,28 @@ async def crear_candidato(
                 raise HTTPException(status_code=404, detail=f"Vacante '{datos.vacante_id}' no encontrada")
             if vacante.estado != "activa":
                 raise HTTPException(status_code=400, detail="Esta vacante no está disponible para aplicar")
+
+        # Cuenta de candidato (email + contraseña), separada de cada aplicación
+        # individual -- un mismo candidato puede tener varias aplicaciones
+        # (una por vacante) pero una sola cuenta para iniciar sesión.
+        cuenta = db.query(Usuario).filter_by(email=datos.email).first()
+        if cuenta and cuenta.rol != "candidato":
+            raise HTTPException(status_code=400, detail="Este correo ya está en uso. Usa otro correo.")
+        if cuenta:
+            if not verify_password(datos.password, cuenta.password_hash):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Ya existe una cuenta con este correo. Ingresa la contraseña de tu cuenta para continuar.",
+                )
+        else:
+            cuenta = Usuario(
+                email=datos.email,
+                password_hash=hash_password(datos.password),
+                nombre=datos.nombre,
+                rol="candidato",
+            )
+            db.add(cuenta)
+            db.commit()
 
         candidato = Candidato(
             id=f"cand_{uuid.uuid4().hex[:12]}",
@@ -563,13 +589,52 @@ async def crear_candidato(
             "nombre": candidato.nombre,
             "es_bolsa_talento": vacante is None,
             "tests_a_responder": tests_a_responder,
+            "access_token": create_access_token(cuenta),
+            "token_type": "bearer",
+            "usuario": {
+                "id": cuenta.id,
+                "email": cuenta.email,
+                "nombre": cuenta.nombre,
+                "rol": cuenta.rol,
+            },
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/candidatos/mis-aplicaciones")
+async def mis_aplicaciones(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("candidato")),
+):
+    """Todas las aplicaciones del candidato autenticado (una por vacante a la
+    que aplicó, más el perfil de bolsa de talento si lo tiene). Nunca incluye
+    score ni clasificación -- solo el estado del proceso, igual que
+    /api/candidatos/{id}/resultados."""
+    candidatos = (
+        db.query(Candidato)
+        .filter(Candidato.email == usuario.email)
+        .order_by(Candidato.fecha_inicio.desc())
+        .all()
+    )
+    return {
+        "aplicaciones": [
+            {
+                "candidato_id": c.id,
+                "vacante_id": c.vacante_id,
+                "vacante_nombre": c.vacante.nombre if c.vacante else None,
+                "vacante_cliente": c.vacante.cliente if c.vacante else None,
+                "estado": c.estado,
+                "status_reclutamiento": c.status_reclutamiento,
+                "fecha_inicio": c.fecha_inicio.isoformat() if c.fecha_inicio else None,
+            }
+            for c in candidatos
+        ]
+    }
 
 
 @app.get("/api/candidatos/{candidato_id}/ficha.pdf")
