@@ -13,6 +13,10 @@ alembic==1.12.1
 # PDF Generation
 reportlab==4.0.9
 
+# Lectura de CV (extracción de texto para precargar el formulario con IA)
+pypdf==4.3.1
+python-docx==1.1.2
+
 # Email
 aiosmtplib==3.0.1
 python-multipart==0.0.6

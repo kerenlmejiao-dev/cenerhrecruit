@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import cv_parser_service
 from database import get_db
 from models import (
     AssessmentPregunta,
@@ -147,8 +148,21 @@ async def subir_cv(
     perfil.cv_filename = archivo.filename
     perfil.cv_storage_path = str(ruta_destino.relative_to(Path(__file__).resolve().parent))
 
+    # Lectura automática del CV: extrae texto y sugiere campos de formación/
+    # experiencia para precargar el formulario. Nunca bloquea la subida si
+    # falla o si no hay ANTHROPIC_API_KEY configurada -- son solo sugerencias,
+    # el candidato revisa y guarda él mismo.
+    texto_cv = cv_parser_service.extraer_texto_cv(ruta_destino, extension)
+    perfil.cv_texto_extraido = texto_cv or None
+    campos_sugeridos = cv_parser_service.sugerir_campos_desde_cv(texto_cv)
+
     db.commit()
-    return {"status": "success", "candidato_id": candidato_id, "cv_filename": archivo.filename}
+    return {
+        "status": "success",
+        "candidato_id": candidato_id,
+        "cv_filename": archivo.filename,
+        "campos_sugeridos": campos_sugeridos,
+    }
 
 
 @router.get("/{candidato_id}/assessments")

@@ -86,6 +86,8 @@ export default function PerfilPage() {
   });
 
   const [cvExistente, setCvExistente] = useState('');
+  const [analizandoCV, setAnalizandoCV] = useState(false);
+  const [camposDetectados, setCamposDetectados] = useState(false);
 
   const candidatoId = localStorage.getItem('candidatoId');
 
@@ -123,8 +125,34 @@ export default function PerfilPage() {
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleFileChange = (e) => {
-    setArchivo(e.target.files[0] || null);
+  const handleFileChange = async (e) => {
+    const nuevoArchivo = e.target.files[0] || null;
+    setArchivo(nuevoArchivo);
+    if (!nuevoArchivo) return;
+
+    setAnalizandoCV(true);
+    setCamposDetectados(false);
+    try {
+      const resultado = await perfilAPI.subirCV(candidatoId, nuevoArchivo);
+      setCvExistente(resultado.cv_filename);
+      const sugeridos = resultado.campos_sugeridos || {};
+      if (Object.keys(sugeridos).length > 0) {
+        // Solo precarga los campos que el candidato todavía no llenó a mano
+        // -- nunca pisa lo que ya escribió.
+        setFormData(prev => {
+          const actualizado = { ...prev };
+          for (const [campo, valor] of Object.entries(sugeridos)) {
+            if (!actualizado[campo]) actualizado[campo] = valor;
+          }
+          return actualizado;
+        });
+        setCamposDetectados(true);
+      }
+    } catch (err) {
+      console.error('Error al subir/leer el CV:', err);
+    } finally {
+      setAnalizandoCV(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -143,9 +171,6 @@ export default function PerfilPage() {
         anos_experiencia: formData.anos_experiencia ? parseInt(formData.anos_experiencia, 10) : null,
       };
       await perfilAPI.guardarCuestionario(candidatoId, payload);
-      if (archivo) {
-        await perfilAPI.subirCV(candidatoId, archivo);
-      }
       if (esBolsaTalento) {
         setGuardadoBolsa(true);
       } else {
@@ -301,13 +326,21 @@ export default function PerfilPage() {
               </div>
 
               <Campo label="Currículum (PDF, DOC o DOCX)">
-                {cvExistente && (
+                {cvExistente && !analizandoCV && (
                   <p className="text-xs text-[#666] mb-1">Ya tienes cargado: {cvExistente}. Sube uno nuevo solo si quieres reemplazarlo.</p>
                 )}
                 <input
                   type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange}
                   className="w-full text-sm text-[#B8BFC7] file:mr-3 file:py-2 file:px-4 file:border-0 file:bg-[#2a2a2a] file:text-white hover:file:bg-[#3a3a3a]"
                 />
+                {analizandoCV && (
+                  <p className="text-xs text-[#C9A14A] mt-1">Leyendo tu CV para precargar el formulario...</p>
+                )}
+                {camposDetectados && !analizandoCV && (
+                  <p className="text-xs text-[#0050A0] mt-1">
+                    Completamos algunos campos según tu CV -- revísalos y corrígelos si hace falta.
+                  </p>
+                )}
               </Campo>
 
               <button

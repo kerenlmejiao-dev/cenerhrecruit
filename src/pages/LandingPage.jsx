@@ -93,6 +93,50 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Por qué CENERH */}
+      <section className="border-t border-[#1f1f1f] py-16 px-6">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center text-3xl md:text-4xl font-semibold mb-4" style={FONT_SERIF}>
+            Por qué <span className="text-[#C9A14A]">CENERH</span>
+          </div>
+          <p className="text-[#B8BFC7] text-center max-w-2xl mx-auto mb-12">
+            Frente a los job boards genéricos y las plataformas de evaluación regionales, esto es
+            lo que nos hace distintos.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border border-[#2a2a2a] p-6">
+              <h3 className="text-white font-bold mb-2">Precio público, sin cotizaciones</h3>
+              <p className="text-[#B8BFC7] text-sm">
+                Ves el precio de cada plan antes de registrarte. Ninguna llamada de ventas
+                obligatoria para saber cuánto cuesta.
+              </p>
+            </div>
+            <div className="border border-[#2a2a2a] p-6">
+              <h3 className="text-white font-bold mb-2">Tus datos se quedan en República Dominicana</h3>
+              <p className="text-[#B8BFC7] text-sm">
+                La información de tus candidatos se procesa y guarda en infraestructura local, no
+                se envía a bases de datos de terceros en otros países.
+              </p>
+            </div>
+            <div className="border border-[#2a2a2a] p-6">
+              <h3 className="text-white font-bold mb-2">La IA nunca decide sola</h3>
+              <p className="text-[#B8BFC7] text-sm">
+                Todo análisis de inteligencia artificial requiere revisión humana antes de usarse
+                -- es apoyo para decidir, nunca un filtro automático.
+              </p>
+            </div>
+            <div className="border border-[#2a2a2a] p-6">
+              <h3 className="text-white font-bold mb-2">Especializados en el Corredor Este</h3>
+              <p className="text-[#B8BFC7] text-sm">
+                Bancos de preguntas por industria (hotelería, construcción, salud, tecnología,
+                energía) pensados para el mercado turístico de la zona, no genéricos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-[#1f1f1f] py-8 px-6 text-center text-[#666] text-xs">
         <Link to="/como-usamos-la-ia" className="hover:text-[#C9A14A] underline">
