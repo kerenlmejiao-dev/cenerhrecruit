@@ -121,7 +121,7 @@ export default function RegistroPage({ modo = 'normal' }) {
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md text-center">
           <p className="text-red-600 mb-4">{error || 'Esta vacante no está disponible.'}</p>
-          <button onClick={() => navigate('/')} className="text-blue-600 hover:text-blue-800 font-medium">
+          <button onClick={() => navigate('/aplicar')} className="text-blue-600 hover:text-blue-800 font-medium">
             Ver otras vacantes
           </button>
         </div>

@@ -5,6 +5,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import LandingPage from './pages/LandingPage';
 import RegistroPage from './pages/RegistroPage';
 import PerfilPage from './pages/PerfilPage';
 import TestsPage from './pages/TestsPage';
@@ -40,8 +41,11 @@ export default function App() {
     <BrowserRouter>
       <ScrollToTop />
       <Routes>
+        {/* Inicio */}
+        <Route path="/" element={<LandingPage />} />
+
         {/* Candidatos */}
-        <Route path="/" element={<RegistroPage modo="normal" />} />
+        <Route path="/aplicar" element={<RegistroPage modo="normal" />} />
         <Route path="/aplicar/:vacanteId" element={<RegistroPage modo="aplicar" />} />
         <Route path="/bolsa-de-talento" element={<RegistroPage modo="bolsa" />} />
         <Route path="/perfil" element={<PerfilPage />} />
