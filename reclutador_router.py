@@ -6,7 +6,6 @@ postulados y sus fichas. Protegido con JWT (rol owner o reclutador).
 """
 
 import uuid
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -16,7 +15,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 import compatibilidad_service
-from auth_users import hash_password, require_role
+from auth_users import hash_password, require_membresia_activa, require_role
 from database import get_db
 from models import (
     AssessmentCenter,
@@ -27,7 +26,6 @@ from models import (
     CandidatoPerfil,
     Empresa,
     ScoreCandidata,
-    Suscripcion,
     TestPsicometrico,
     Usuario,
     Vacante,
@@ -38,10 +36,13 @@ from models import (
 BASE_DIR = Path(__file__).resolve().parent
 UPLOADS_CV_DIR = BASE_DIR / "uploads" / "cv"
 
+# Todo el panel de reclutador exige membresía paga vigente (ningún plan es
+# gratuito -- ver require_membresia_activa en auth_users.py). El owner queda
+# exento.
 router = APIRouter(
     prefix="/api/reclutador",
     tags=["Portal Reclutador"],
-    dependencies=[Depends(require_role("owner", "reclutador"))],
+    dependencies=[Depends(require_membresia_activa)],
 )
 
 
@@ -402,10 +403,9 @@ def listar_bolsa_talento(
 # ============================================================================
 # Acceso a datos de un candidato específico (ficha, CV, assessment centers).
 # El reclutador solo puede ver candidatos de vacantes que él mismo creó; el
-# owner ve todo. Separado en dos funciones porque no todo requiere suscripción
-# activa: el CV y el resto del perfil son de acceso libre para el dueño de la
-# vacante, solo el análisis de Assessment Centers (IA) exige suscripción
-# (ver _validar_acceso_candidato más abajo).
+# owner ve todo. La membresía activa ya se exige a nivel de todo el router
+# (ver require_membresia_activa arriba), así que aquí solo queda validar
+# la propiedad del candidato.
 # ============================================================================
 def _validar_propietario_candidato(db: Session, candidato_id: str, usuario: Usuario) -> Candidato:
     candidato = db.query(Candidato).filter_by(id=candidato_id).first()
@@ -449,28 +449,8 @@ def descargar_cv_candidato(
 #
 # El score de IA no debe usarse ciego para contratar (ver AssessmentScore en
 # models.py), así que el reclutador dueño de la vacante puede leer la
-# respuesta del candidato y el análisis de la IA antes de decidir. Requiere
-# suscripción activa (ver Suscripcion/pagos_router.py); el owner no necesita
-# suscripción.
+# respuesta del candidato y el análisis de la IA antes de decidir.
 # ============================================================================
-def _validar_acceso_candidato(db: Session, candidato_id: str, usuario: Usuario) -> Candidato:
-    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
-
-    if usuario.rol != "owner":
-        suscripcion = (
-            db.query(Suscripcion)
-            .filter_by(usuario_id=usuario.id, estado="activa")
-            .order_by(Suscripcion.creado_en.desc())
-            .first()
-        )
-        vigente = suscripcion and suscripcion.fecha_renovacion and suscripcion.fecha_renovacion > datetime.utcnow()
-        if not vigente:
-            raise HTTPException(
-                status_code=402,
-                detail="Necesitas una suscripción activa para ver el análisis de Assessment Centers.",
-            )
-
-    return candidato
 
 
 @router.get("/candidatos/{candidato_id}/assessments")
@@ -479,7 +459,7 @@ def listar_assessments_candidato_reclutador(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(require_role("owner", "reclutador")),
 ):
-    candidato = _validar_acceso_candidato(db, candidato_id, usuario)
+    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
 
     respuestas = db.query(AssessmentRespuesta).filter_by(candidato_id=candidato_id).all()
     preguntas_por_id = {
@@ -533,7 +513,7 @@ def marcar_assessment_revisado(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(require_role("owner", "reclutador")),
 ):
-    _validar_acceso_candidato(db, candidato_id, usuario)
+    _validar_propietario_candidato(db, candidato_id, usuario)
 
     score = db.query(AssessmentScore).filter_by(candidato_id=candidato_id, assessment_id=assessment_id).first()
     if not score:

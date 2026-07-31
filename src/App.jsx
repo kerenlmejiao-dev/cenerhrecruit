@@ -17,8 +17,10 @@ import LoginPage from './pages/LoginPage';
 import LoginCandidatoPage from './pages/LoginCandidatoPage';
 import MisAplicacionesPage from './pages/MisAplicacionesPage';
 import RegistroReclutadorPage from './pages/RegistroReclutadorPage';
+import PlanesPage from './pages/PlanesPage';
 import RutaProtegida from './components/RutaProtegida';
 import DashboardReclutador from './pages/reclutador/DashboardReclutador';
+import MembresiaRequeridaPage from './pages/reclutador/MembresiaRequeridaPage';
 import CrearVacante from './pages/reclutador/CrearVacante';
 import CrearEmpresaPage from './pages/reclutador/CrearEmpresaPage';
 import VacanteDetalle from './pages/reclutador/VacanteDetalle';
@@ -66,8 +68,14 @@ export default function App() {
         {/* Login reclutador/empresa */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro-reclutador" element={<RegistroReclutadorPage />} />
+        <Route path="/planes" element={<PlanesPage />} />
 
         {/* Portal Reclutador */}
+        <Route path="/reclutador/membresia-requerida" element={
+          <RutaProtegida rolesPermitidos={['owner', 'reclutador']}>
+            <MembresiaRequeridaPage />
+          </RutaProtegida>
+        } />
         <Route path="/reclutador" element={
           <RutaProtegida rolesPermitidos={['owner', 'reclutador']}>
             <DashboardReclutador />

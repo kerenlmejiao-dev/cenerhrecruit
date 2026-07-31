@@ -101,6 +101,12 @@ export default function RegistroReclutadorPage() {
                   className={inputClass}
                   placeholder="Te lo compartió la administración de CENERH"
                 />
+                <p className="text-xs text-[#666] mt-1">
+                  ¿No tienes código todavía?{' '}
+                  <Link to="/planes" className="text-[#C9A14A] hover:text-white underline">
+                    Ver planes y membresías
+                  </Link>
+                </p>
               </div>
 
               <button

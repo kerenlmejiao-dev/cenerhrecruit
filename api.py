@@ -35,7 +35,7 @@ from models import (
     Vacante,
 )
 from auth import require_admin
-from auth_users import require_role
+from auth_users import require_membresia_activa, require_role
 from database import engine, get_db
 from migraciones import aplicar_migraciones
 
@@ -641,7 +641,7 @@ async def mis_aplicaciones(
 async def generar_ficha_pdf(
     candidato_id: str,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_role("owner", "reclutador")),
+    usuario: Usuario = Depends(require_membresia_activa),
 ):
     """Generar y descargar el PDF con la ficha técnica del candidato.
 

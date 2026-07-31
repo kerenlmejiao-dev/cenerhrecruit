@@ -20,7 +20,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Usuario
+from models import Suscripcion, Usuario
 
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 ALGORITHM = "HS256"
@@ -92,3 +92,43 @@ def require_role(*roles: str):
         return usuario
 
     return dependency
+
+
+def require_membresia_activa(
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Usuario:
+    """Como require_role('owner', 'reclutador'), pero además exige que el
+    reclutador tenga una membresía paga vigente (ver Suscripcion en
+    models.py) -- ningún plan es gratuito. El owner no necesita membresía.
+
+    Mientras dLocal termina de configurarse, la membresía se activa a mano
+    con POST /api/admin/activar-membresia (ver admin_router.py); cuando
+    dLocal esté listo, el mismo webhook de pago puede activarla en vez de
+    hacerlo manualmente."""
+    if usuario.rol not in ("owner", "reclutador"):
+        raise HTTPException(status_code=403, detail="No autorizado para este recurso")
+    if usuario.rol == "owner":
+        return usuario
+
+    suscripcion = (
+        db.query(Suscripcion)
+        .filter_by(usuario_id=usuario.id)
+        .order_by(Suscripcion.creado_en.desc())
+        .first()
+    )
+    vigente = (
+        suscripcion
+        and suscripcion.estado == "activa"
+        and suscripcion.fecha_renovacion
+        and suscripcion.fecha_renovacion > datetime.utcnow()
+    )
+    if not vigente:
+        if suscripcion and suscripcion.estado == "activa":
+            suscripcion.estado = "vencida"
+            db.commit()
+        raise HTTPException(
+            status_code=402,
+            detail="Necesitas una membresía activa para usar el panel de reclutador.",
+        )
+    return usuario

@@ -31,12 +31,53 @@ NOTIFICATION_BASE_URL = os.getenv("DLOCAL_NOTIFICATION_URL", "")
 PAIS = "DO"
 MONEDA = "DOP"
 
-# Precios de negocio (definidos por la dueña de la plataforma)
+# Precios y características de negocio (definidos por la dueña de la
+# plataforma). "para" indica a quién está dirigido el plan -- Básico/Pro son
+# para reclutadores, Enterprise es para empresas.
 PLANES_SUSCRIPCION = {
-    "basico": {"nombre": "Básico", "precio_mensual": 500.0},
-    "pro": {"nombre": "Pro", "precio_mensual": 1500.0},
-    "enterprise": {"nombre": "Enterprise", "precio_mensual": 3000.0},
+    "basico": {
+        "nombre": "Básico",
+        "precio_mensual": 1000.0,
+        "para": "reclutador",
+        "caracteristicas": [
+            "Vacantes activas sin límite",
+            "Link de aplicación para que tus candidatos completen el proceso",
+            "Ficha general del candidato (aplica / no aplica)",
+            "Pruebas psicométricas para cada vacante",
+        ],
+    },
+    "pro": {
+        "nombre": "Pro",
+        "precio_mensual": 1500.0,
+        "para": "reclutador",
+        "caracteristicas": [
+            "Vacantes activas sin límite",
+            "Link de aplicación para que tus candidatos completen el proceso",
+            "Ficha general del candidato (aplica / no aplica)",
+            "Pruebas psicométricas para cada vacante",
+            "Acceso a los candidatos de la Bolsa de Talento",
+        ],
+    },
+    "enterprise": {
+        "nombre": "Enterprise",
+        "precio_mensual": 5000.0,
+        "para": "empresa",
+        "caracteristicas": [
+            "Vacantes activas sin límite",
+            "Link de aplicación para que tus candidatos completen el proceso",
+            "Ficha general del candidato (aplica / no aplica)",
+            "Pruebas psicométricas para cada vacante",
+            "Acceso a los candidatos de la Bolsa de Talento",
+            "Guion de entrevistas por competencias",
+            "Perfil más detallado del candidato",
+        ],
+    },
 }
+
+# Duración de cada ciclo de membresía. Al vencer, el reclutador pierde acceso
+# al panel hasta que se registre un nuevo pago (ver require_membresia_activa
+# en auth_users.py y POST /api/admin/activar-membresia).
+DURACION_MEMBRESIA_DIAS = 27
 
 PRECIO_DESBLOQUEO_CANDIDATO = 200.0
 

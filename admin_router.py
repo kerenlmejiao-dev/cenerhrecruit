@@ -8,8 +8,12 @@ incluida producción -- sin necesitar acceso directo a la base de datos:
 el propio servidor corre el seed usando su DATABASE_URL interno.
 """
 
-from fastapi import APIRouter, Depends
+from datetime import datetime, timedelta
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+import dlocal_service
 from auth import require_admin
 from database import SessionLocal
 from models import (
@@ -164,6 +168,70 @@ def limpiar_datos_prueba():
 
         session.commit()
         return borrados
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+# Activación manual de membresías, mientras dLocal termina de configurarse.
+# Cuando el cobro automático esté listo, el mismo webhook de pago puede
+# llamar a esta misma lógica en vez de que la dueña de la plataforma lo
+# active a mano por aquí.
+class ActivarMembresiaPayload(BaseModel):
+    email: str
+    plan: str
+
+
+@router.post("/activar-membresia")
+def activar_membresia(payload: ActivarMembresiaPayload):
+    if payload.plan not in dlocal_service.PLANES_SUSCRIPCION:
+        raise HTTPException(status_code=400, detail=f"Plan '{payload.plan}' no existe")
+
+    session = SessionLocal()
+    try:
+        usuario = session.query(Usuario).filter_by(email=payload.email, rol="reclutador").first()
+        if not usuario:
+            raise HTTPException(status_code=404, detail=f"No hay reclutador con email '{payload.email}'")
+
+        plan_info = dlocal_service.PLANES_SUSCRIPCION[payload.plan]
+        ahora = datetime.utcnow()
+        fecha_renovacion = ahora + timedelta(days=dlocal_service.DURACION_MEMBRESIA_DIAS)
+
+        suscripcion = (
+            session.query(Suscripcion)
+            .filter_by(usuario_id=usuario.id)
+            .order_by(Suscripcion.creado_en.desc())
+            .first()
+        )
+        if suscripcion:
+            suscripcion.plan = payload.plan
+            suscripcion.precio_mensual = plan_info["precio_mensual"]
+            suscripcion.estado = "activa"
+            suscripcion.fecha_inicio = ahora
+            suscripcion.fecha_renovacion = fecha_renovacion
+        else:
+            suscripcion = Suscripcion(
+                usuario_id=usuario.id,
+                plan=payload.plan,
+                precio_mensual=plan_info["precio_mensual"],
+                estado="activa",
+                fecha_inicio=ahora,
+                fecha_renovacion=fecha_renovacion,
+            )
+            session.add(suscripcion)
+
+        session.commit()
+        return {
+            "email": usuario.email,
+            "plan": payload.plan,
+            "estado": "activa",
+            "fecha_renovacion": fecha_renovacion.isoformat(),
+        }
+    except HTTPException:
+        session.rollback()
+        raise
     except Exception:
         session.rollback()
         raise

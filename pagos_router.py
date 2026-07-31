@@ -22,6 +22,28 @@ from models import Candidato, CandidatoAcceso, Suscripcion, Transaccion, Usuario
 router = APIRouter(prefix="/api", tags=["Pagos"])
 
 
+@router.get("/planes")
+def listar_planes_publico():
+    """Planes de membresía, públicos (sin login) -- para la página de
+    comparación que se enlaza desde el registro de reclutador.
+
+    No incluye la duración del ciclo de membresía (dato interno, ver
+    dlocal_service.DURACION_MEMBRESIA_DIAS) -- eso no se comunica en
+    ninguna página pública."""
+    return {
+        "planes": [
+            {
+                "id": pid,
+                "nombre": p["nombre"],
+                "precio_mensual": p["precio_mensual"],
+                "para": p.get("para"),
+                "caracteristicas": p.get("caracteristicas", []),
+            }
+            for pid, p in dlocal_service.PLANES_SUSCRIPCION.items()
+        ],
+    }
+
+
 def _requiere_dlocal():
     if not dlocal_service.dlocal_configurado():
         raise HTTPException(
@@ -78,7 +100,13 @@ def obtener_suscripcion(
 ):
     suscripcion = db.query(Suscripcion).filter_by(usuario_id=usuario.id).order_by(Suscripcion.creado_en.desc()).first()
     planes = [
-        {"id": pid, "nombre": p["nombre"], "precio_mensual": p["precio_mensual"]}
+        {
+            "id": pid,
+            "nombre": p["nombre"],
+            "precio_mensual": p["precio_mensual"],
+            "para": p.get("para"),
+            "caracteristicas": p.get("caracteristicas", []),
+        }
         for pid, p in dlocal_service.PLANES_SUSCRIPCION.items()
     ]
 

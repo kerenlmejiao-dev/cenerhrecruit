@@ -35,6 +35,12 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUsuario');
     }
+    // 402 = sin membresía activa (ver require_membresia_activa en
+    // auth_users.py) -- único uso de este código en todo el sistema, así
+    // que redirigir siempre a la pantalla de membresía es seguro.
+    if (error.response?.status === 402 && !window.location.pathname.startsWith('/reclutador/membresia-requerida')) {
+      window.location.href = '/reclutador/membresia-requerida';
+    }
     throw error;
   }
 );
@@ -183,6 +189,14 @@ export const empresaAPI = {
 /**
  * PAGOS (suscripción reclutador + desbloqueo de candidatos)
  */
+// Planes de membresía, públicos (sin login) -- para la página de comparación
+export const planesAPI = {
+  listar: async () => {
+    const response = await apiClient.get('/api/planes');
+    return response.data;
+  },
+};
+
 export const pagosAPI = {
   obtenerSuscripcion: async () => {
     const response = await apiClient.get('/api/reclutador/suscripcion');
