@@ -695,13 +695,15 @@ if os.path.isdir(_FRONTEND_DIST):
 if __name__ == "__main__":
     import uvicorn
 
-    # En Railway (y la mayoría de plataformas de contenedores) hay que
-    # escuchar en 0.0.0.0 y en el puerto que la plataforma asigna via $PORT
-    # -- no en el 127.0.0.1:8000 fijo que usábamos solo para desarrollo local.
+    # Hay que escuchar en 0.0.0.0 (no 127.0.0.1) para que el proxy de Railway
+    # pueda llegar al contenedor. El puerto se queda fijo en 8000 a propósito
+    # -- no leemos $PORT porque el "Public Networking" de este servicio en
+    # Railway ya está configurado para enrutar al 8000, y $PORT resultó traer
+    # un valor distinto (8080) que no coincide, causando 502.
     # API_HOST/API_PORT siguen mandando si están definidas explícitamente
     # (como en el .env local), para no cambiar el comportamiento en desarrollo.
     api_host = os.getenv("API_HOST", "0.0.0.0")
-    api_port = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
+    api_port = int(os.getenv("API_PORT", "8000"))
 
     print("🚀 Iniciando CENERH RECRUIT OS API")
     print(f"   URL: http://{api_host}:{api_port}")
