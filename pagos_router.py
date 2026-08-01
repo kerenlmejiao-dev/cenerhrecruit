@@ -1,6 +1,8 @@
 """
 pagos_router.py - Endpoints de pago (dLocal): suscripción de reclutadores
-(renovación manual mensual) y desbloqueo de candidatos (Portal Empresa).
+(renovación manual mensual), desbloqueo de candidatos (Portal Empresa), y
+compras del propio candidato sobre sí mismo (estatus del proceso, resultados,
+análisis de CV).
 
 Incluye el webhook de dLocal y un endpoint de verificación manual de estado
 (útil en desarrollo local, donde dLocal no puede alcanzar un webhook en
@@ -14,10 +16,24 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import cv_parser_service
 import dlocal_service
+import reporte_candidato_service
 from auth_users import require_role
 from database import get_db
-from models import Candidato, CandidatoAcceso, Suscripcion, Transaccion, Usuario, Vacante
+from models import (
+    AssessmentScore,
+    Candidato,
+    CandidatoAcceso,
+    CandidatoCompra,
+    CandidatoPerfil,
+    ScoreCandidata,
+    Suscripcion,
+    Transaccion,
+    Usuario,
+    Vacante,
+)
+from scoring import SistemaScoring
 
 router = APIRouter(prefix="/api", tags=["Pagos"])
 
@@ -78,6 +94,18 @@ def _procesar_resultado_pago(db: Session, transaccion: Transaccion, estado_dloca
                 db.add(CandidatoAcceso(
                     empresa_id=transaccion.empresa_id,
                     candidato_id=transaccion.candidato_id,
+                    transaccion_id=transaccion.id,
+                ))
+
+        elif transaccion.tipo in ("estatus_candidato", "resultados_candidato", "analisis_cv_candidato"):
+            tipo_compra = transaccion.tipo.removesuffix("_candidato")
+            existente = db.query(CandidatoCompra).filter_by(
+                candidato_id=transaccion.candidato_id, tipo=tipo_compra
+            ).first()
+            if not existente:
+                db.add(CandidatoCompra(
+                    candidato_id=transaccion.candidato_id,
+                    tipo=tipo_compra,
                     transaccion_id=transaccion.id,
                 ))
 
@@ -272,17 +300,183 @@ def desbloquear_candidato(
 
 
 # ============================================================================
+# PAGOS DE CANDIDATOS (estatus del proceso / resultados / análisis de CV)
+#
+# A diferencia de la suscripción y el desbloqueo (donde paga el reclutador o
+# la empresa), aquí el candidato paga por desbloquear algo sobre sí mismo.
+# Requiere que el candidato tenga sesión iniciada (rol "candidato") y que la
+# aplicación le pertenezca -- ver crear_candidato en api.py, que ya le da
+# sesión automáticamente al aplicar.
+# ============================================================================
+def _validar_propietario_candidato(db: Session, candidato_id: str, usuario: Usuario) -> Candidato:
+    candidato = db.query(Candidato).filter_by(id=candidato_id).first()
+    if not candidato:
+        raise HTTPException(status_code=404, detail="Candidato no encontrado")
+    if candidato.email != usuario.email:
+        raise HTTPException(status_code=403, detail="Esta aplicación no te pertenece")
+    return candidato
+
+
+@router.get("/candidatos/{candidato_id}/compras")
+def obtener_compras_candidato(
+    candidato_id: str,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("candidato")),
+):
+    _validar_propietario_candidato(db, candidato_id, usuario)
+    tipos_desbloqueados = {
+        c.tipo for c in db.query(CandidatoCompra).filter_by(candidato_id=candidato_id).all()
+    }
+    return {
+        "estatus": "estatus" in tipos_desbloqueados,
+        "resultados": "resultados" in tipos_desbloqueados,
+        "analisis_cv": "analisis_cv" in tipos_desbloqueados,
+        "precios": {tipo: p["precio"] for tipo, p in dlocal_service.PRODUCTOS_CANDIDATO.items()},
+    }
+
+
+class CheckoutCandidatoPayload(BaseModel):
+    tipo: str  # "estatus" | "resultados" | "analisis_cv"
+    documento: str | None = None
+
+
+@router.post("/candidatos/{candidato_id}/pagos/checkout")
+def crear_checkout_candidato(
+    candidato_id: str,
+    payload: CheckoutCandidatoPayload,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("candidato")),
+):
+    _requiere_dlocal()
+    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
+
+    if payload.tipo not in dlocal_service.PRODUCTOS_CANDIDATO:
+        raise HTTPException(status_code=400, detail="Producto inválido")
+
+    if payload.tipo == "estatus" and not candidato.vacante_id:
+        raise HTTPException(status_code=400, detail="Tu perfil de bolsa de talento no tiene un proceso de reclutamiento en curso")
+
+    if payload.tipo == "resultados" and not db.query(ScoreCandidata).filter_by(candidato_id=candidato_id).first():
+        raise HTTPException(status_code=400, detail="Todavía no has completado tus pruebas")
+
+    perfil = candidato.perfil
+    if payload.tipo == "analisis_cv" and not (perfil and perfil.cv_texto_extraido):
+        raise HTTPException(status_code=400, detail="Sube tu CV antes de pagar por el análisis")
+
+    ya_desbloqueado = db.query(CandidatoCompra).filter_by(candidato_id=candidato_id, tipo=payload.tipo).first()
+    if ya_desbloqueado:
+        return {"status": "ya_desbloqueado"}
+
+    if payload.documento:
+        if not perfil:
+            perfil = CandidatoPerfil(candidato_id=candidato_id)
+            db.add(perfil)
+        perfil.cedula = payload.documento
+        db.commit()
+    documento = perfil.cedula if perfil else None
+    if not documento:
+        raise HTTPException(status_code=400, detail="Falta la cédula para procesar el pago")
+
+    order_id = f"cand-{payload.tipo}-{candidato_id}-{uuid.uuid4().hex[:10]}"
+    transaccion = Transaccion(
+        tipo=f"{payload.tipo}_candidato", candidato_id=candidato_id,
+        monto=dlocal_service.PRODUCTOS_CANDIDATO[payload.tipo]["precio"],
+        order_id=order_id,
+    )
+    db.add(transaccion)
+    db.commit()
+
+    try:
+        resultado = dlocal_service.crear_checkout_candidato(candidato.nombre, candidato.email, documento, payload.tipo, order_id)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    transaccion.dlocal_payment_id = resultado.get("id")
+    db.commit()
+
+    return {"checkout_url": resultado.get("redirect_url"), "order_id": order_id}
+
+
+@router.get("/candidatos/{candidato_id}/reporte-resultados")
+def obtener_reporte_resultados(
+    candidato_id: str,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("candidato")),
+):
+    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
+
+    if not db.query(CandidatoCompra).filter_by(candidato_id=candidato_id, tipo="resultados").first():
+        raise HTTPException(status_code=402, detail="Todavía no has pagado por ver tus resultados")
+
+    if candidato.reporte_resultados:
+        return {"reporte": candidato.reporte_resultados}
+
+    scores = db.query(ScoreCandidata).filter_by(candidato_id=candidato_id).all()
+    categorias = {"competencias": [], "psicometricos": [], "cognitivos": []}
+    for score in scores:
+        categoria = SistemaScoring.CATEGORIA_TEST.get(score.test_id)
+        if categoria in categorias:
+            categorias[categoria].append(score.score_normalizado)
+    promedios = {cat: round(sum(v) / len(v), 1) for cat, v in categorias.items() if v}
+
+    assessment_scores = db.query(AssessmentScore).filter_by(candidato_id=candidato_id).all()
+    feedbacks = [a.feedback_llm for a in assessment_scores if a.feedback_llm]
+
+    reporte = reporte_candidato_service.generar_reporte_candidato(candidato.nombre, promedios, feedbacks)
+    if not reporte:
+        raise HTTPException(status_code=503, detail="No pudimos generar tu reporte todavía. Intenta de nuevo en unos minutos.")
+
+    candidato.reporte_resultados = reporte
+    db.commit()
+
+    return {"reporte": reporte}
+
+
+@router.get("/candidatos/{candidato_id}/analisis-cv")
+def obtener_analisis_cv(
+    candidato_id: str,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("candidato")),
+):
+    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
+
+    if not db.query(CandidatoCompra).filter_by(candidato_id=candidato_id, tipo="analisis_cv").first():
+        raise HTTPException(status_code=402, detail="Todavía no has pagado por el análisis de tu CV")
+
+    perfil = candidato.perfil
+    if not perfil or not perfil.cv_texto_extraido:
+        raise HTTPException(status_code=400, detail="No encontramos tu CV. Súbelo de nuevo desde tu perfil")
+
+    if perfil.analisis_cv:
+        return {"analisis": perfil.analisis_cv}
+
+    analisis = cv_parser_service.analizar_cv(perfil.cv_texto_extraido)
+    if not analisis:
+        raise HTTPException(status_code=503, detail="No pudimos generar tu análisis todavía. Intenta de nuevo en unos minutos.")
+
+    perfil.analisis_cv = analisis
+    db.commit()
+
+    return {"analisis": analisis}
+
+
+# ============================================================================
 # ESTADO DE UNA TRANSACCIÓN (usado por la página de resultado + respaldo sin webhook)
 # ============================================================================
 @router.get("/pagos/estado/{order_id}")
 def estado_transaccion(
     order_id: str,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(require_role("owner", "reclutador", "empresa")),
+    usuario: Usuario = Depends(require_role("owner", "reclutador", "empresa", "candidato")),
 ):
     transaccion = db.query(Transaccion).filter_by(order_id=order_id).first()
     if not transaccion:
         raise HTTPException(status_code=404, detail="Transacción no encontrada")
+
+    if usuario.rol == "candidato":
+        candidato = db.query(Candidato).filter_by(id=transaccion.candidato_id).first()
+        if not candidato or candidato.email != usuario.email:
+            raise HTTPException(status_code=403, detail="Esta transacción no te pertenece")
 
     if transaccion.estado == "pendiente" and transaccion.dlocal_payment_id and dlocal_service.dlocal_configurado():
         try:

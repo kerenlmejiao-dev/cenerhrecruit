@@ -87,6 +87,24 @@ DURACION_MEMBRESIA_DIAS = 27
 
 PRECIO_DESBLOQUEO_CANDIDATO = 200.0
 
+# Compras del propio candidato sobre sí mismo (distinto del desbloqueo de
+# arriba, que paga la EMPRESA para ver a un candidato). Ver CandidatoCompra
+# en models.py y la sección "PAGOS DE CANDIDATOS" en pagos_router.py.
+PRODUCTOS_CANDIDATO = {
+    "estatus": {
+        "precio": 200.0,
+        "descripcion": "Ver estatus completo del proceso de reclutamiento",
+    },
+    "resultados": {
+        "precio": 500.0,
+        "descripcion": "Recibir resultados del proceso",
+    },
+    "analisis_cv": {
+        "precio": 500.0,
+        "descripcion": "Análisis de CV con IA",
+    },
+}
+
 
 def dlocal_configurado() -> bool:
     return bool(DLOCALGO_API_KEY and DLOCALGO_SECRET_KEY)
@@ -158,6 +176,18 @@ def crear_checkout_desbloqueo(empresa_nombre: str, empresa_email: str, empresa_d
         payer_nombre=empresa_nombre,
         payer_email=empresa_email,
         payer_documento=empresa_documento,
+    )
+
+
+def crear_checkout_candidato(candidato_nombre: str, candidato_email: str, candidato_documento: str, tipo: str, order_id: str) -> dict:
+    producto = PRODUCTOS_CANDIDATO[tipo]
+    return _crear_pago_redirect(
+        monto=producto["precio"],
+        order_id=order_id,
+        descripcion=f"CENERH RECRUIT OS - {producto['descripcion']}",
+        payer_nombre=candidato_nombre,
+        payer_email=candidato_email,
+        payer_documento=candidato_documento,
     )
 
 

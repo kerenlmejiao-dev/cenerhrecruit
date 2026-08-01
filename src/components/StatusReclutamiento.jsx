@@ -1,11 +1,27 @@
 /**
  * Barra de progreso del proceso de reclutamiento -- lo único que el
- * candidato ve de su proceso. Nunca muestra score ni clasificación.
+ * candidato puede ver de su proceso (nunca score ni clasificación), y solo
+ * si ya pagó RD$200 por desbloquear el estatus (ver "estatus" en
+ * CandidatoCompra / pagos_router.py).
  */
+
+import PagoCandidatoCTA from './PagoCandidatoCTA';
 
 const ETAPAS_PROCESO = ['Aplicación recibida', 'En evaluación', 'Preseleccionado', 'Entrevista', 'Decisión final'];
 
-export default function StatusReclutamiento({ status }) {
+export default function StatusReclutamiento({ status, desbloqueado = true, candidatoId }) {
+  if (!desbloqueado) {
+    return (
+      <PagoCandidatoCTA
+        candidatoId={candidatoId}
+        tipo="estatus"
+        precio={200}
+        titulo="Estatus del proceso bloqueado"
+        descripcion="Por RD$200 puedes ver en qué etapa exacta va tu proceso: si ya fue verificado, si fue enviado a entrevista, o si fue descartado."
+      />
+    );
+  }
+
   if (status === 'Rechazado') {
     return (
       <div className="border border-[#2a2a2a] p-6 text-center">

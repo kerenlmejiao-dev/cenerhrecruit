@@ -8,13 +8,17 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { candidatosAPI, authAPI } from '../services/api';
+import { candidatosAPI, authAPI, pagosCandidatoAPI } from '../services/api';
 import { FONT_SANS, FONT_SERIF } from '../theme';
 import StatusReclutamiento from '../components/StatusReclutamiento';
+import PagoCandidatoCTA from '../components/PagoCandidatoCTA';
 
 export default function ResultadosPage() {
   const navigate = useNavigate();
   const [datos, setDatos] = useState(null);
+  const [compras, setCompras] = useState(null);
+  const [reporte, setReporte] = useState(null);
+  const [cargandoReporte, setCargandoReporte] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,11 +38,30 @@ export default function ResultadosPage() {
     try {
       const data = await candidatosAPI.obtenerResultados(candidatoId);
       setDatos(data);
+      if (authAPI.estaAutenticado()) {
+        const comprasData = await pagosCandidatoAPI.compras(candidatoId);
+        setCompras(comprasData);
+        if (comprasData.resultados) {
+          cargarReporte();
+        }
+      }
     } catch (err) {
       setError('Error al cargar resultados');
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarReporte = async () => {
+    setCargandoReporte(true);
+    try {
+      const data = await pagosCandidatoAPI.reporteResultados(candidatoId);
+      setReporte(data.reporte);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCargandoReporte(false);
     }
   };
 
@@ -79,8 +102,63 @@ export default function ResultadosPage() {
         </div>
 
         <div className="mb-8">
-          <StatusReclutamiento status={datos.status_reclutamiento} />
+          {authAPI.estaAutenticado() ? (
+            <StatusReclutamiento
+              status={datos.status_reclutamiento}
+              desbloqueado={datos.estatus_desbloqueado}
+              candidatoId={candidatoId}
+            />
+          ) : (
+            <div className="border border-[#2a2a2a] p-6 text-center">
+              <p className="text-[#B8BFC7] text-sm">
+                <Link to="/login-candidato" className="text-[#C9A14A] hover:text-white underline">Inicia sesión</Link>
+                {' '}para ver el estatus de tu proceso.
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Resultados (RD$500) */}
+        {authAPI.estaAutenticado() && (
+          <div className="mb-8">
+            {!compras ? null : compras.resultados ? (
+              <div className="border border-[#2a2a2a] p-6">
+                <h2 className="text-sm font-semibold text-[#666] uppercase tracking-wide mb-4">Tus resultados</h2>
+                {cargandoReporte && <p className="text-[#B8BFC7] text-sm">Generando tu reporte...</p>}
+                {!cargandoReporte && reporte && (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[#C9A14A] font-semibold text-sm mb-2">Fortalezas</p>
+                      <ul className="list-disc list-inside text-[#B8BFC7] text-sm space-y-1">
+                        {reporte.fortalezas?.map((f, i) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-[#C9A14A] font-semibold text-sm mb-2">Áreas de oportunidad</p>
+                      <ul className="list-disc list-inside text-[#B8BFC7] text-sm space-y-1">
+                        {reporte.areas_de_oportunidad?.map((a, i) => <li key={i}>{a}</li>)}
+                      </ul>
+                    </div>
+                    {reporte.mensaje && (
+                      <p className="text-white text-sm border-l-4 border-[#C9A14A] pl-4 py-1">{reporte.mensaje}</p>
+                    )}
+                  </div>
+                )}
+                {!cargandoReporte && !reporte && (
+                  <p className="text-[#B8BFC7] text-sm">No pudimos generar tu reporte todavía. Intenta más tarde.</p>
+                )}
+              </div>
+            ) : (
+              <PagoCandidatoCTA
+                candidatoId={candidatoId}
+                tipo="resultados"
+                precio={500}
+                titulo="Recibe tus resultados"
+                descripcion="Por RD$500 recibes un reporte con tus fortalezas y áreas de oportunidad de este proceso."
+              />
+            )}
+          </div>
+        )}
 
         {/* Acciones */}
         <div className="mb-8 flex flex-wrap gap-3">

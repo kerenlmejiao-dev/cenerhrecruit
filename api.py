@@ -26,6 +26,7 @@ from models import (
     AssessmentScore,
     Base,
     Candidato,
+    CandidatoCompra,
     CandidatoPerfil,
     PreguntaTest,
     Referencia,
@@ -489,11 +490,19 @@ async def obtener_resultados(
         # El candidato nunca ve su score, clasificación ni desglose -- eso es
         # solo para el reclutador (ver /api/reclutador/candidatos/{id}/assessments
         # en reclutador_router.py). Esta respuesta pública solo confirma que el
-        # proceso de evaluación terminó y en qué etapa de reclutamiento va.
+        # proceso de evaluación terminó.
+        #
+        # El estatus detallado del proceso (en qué etapa va) es de pago
+        # (RD$200, ver "estatus" en CandidatoCompra / pagos_router.py) -- se
+        # oculta aquí salvo que ya lo haya desbloqueado.
+        estatus_desbloqueado = bool(
+            db.query(CandidatoCompra).filter_by(candidato_id=candidato_id, tipo="estatus").first()
+        )
         return {
             "status": "success",
             "candidato_id": candidato_id,
-            "status_reclutamiento": candidato.status_reclutamiento,
+            "status_reclutamiento": candidato.status_reclutamiento if estatus_desbloqueado else None,
+            "estatus_desbloqueado": estatus_desbloqueado,
         }
 
     except HTTPException:
@@ -621,14 +630,24 @@ async def mis_aplicaciones(
 ):
     """Todas las aplicaciones del candidato autenticado (una por vacante a la
     que aplicó, más el perfil de bolsa de talento si lo tiene). Nunca incluye
-    score ni clasificación -- solo el estado del proceso, igual que
-    /api/candidatos/{id}/resultados."""
+    score ni clasificación -- eso es solo para el reclutador.
+
+    El estatus detallado del proceso es de pago (RD$200 por aplicación, ver
+    "estatus" en CandidatoCompra / pagos_router.py) -- se oculta salvo que ya
+    lo haya desbloqueado para esa aplicación específica."""
     candidatos = (
         db.query(Candidato)
         .filter(Candidato.email == usuario.email)
         .order_by(Candidato.fecha_inicio.desc())
         .all()
     )
+    ids_desbloqueados = {
+        c.candidato_id
+        for c in db.query(CandidatoCompra).filter(
+            CandidatoCompra.candidato_id.in_([c.id for c in candidatos]),
+            CandidatoCompra.tipo == "estatus",
+        ).all()
+    }
     return {
         "aplicaciones": [
             {
@@ -637,7 +656,8 @@ async def mis_aplicaciones(
                 "vacante_nombre": c.vacante.nombre if c.vacante else None,
                 "vacante_cliente": c.vacante.cliente if c.vacante else None,
                 "estado": c.estado,
-                "status_reclutamiento": c.status_reclutamiento,
+                "status_reclutamiento": c.status_reclutamiento if c.id in ids_desbloqueados else None,
+                "estatus_desbloqueado": c.id in ids_desbloqueados,
                 "fecha_inicio": c.fecha_inicio.isoformat() if c.fecha_inicio else None,
             }
             for c in candidatos

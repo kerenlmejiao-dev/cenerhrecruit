@@ -79,7 +79,11 @@ export default function MisAplicacionesPage() {
                 )}
               </div>
               {a.vacante_id ? (
-                <StatusReclutamiento status={a.status_reclutamiento} />
+                <StatusReclutamiento
+                  status={a.status_reclutamiento}
+                  desbloqueado={a.estatus_desbloqueado}
+                  candidatoId={a.candidato_id}
+                />
               ) : (
                 <p className="text-[#B8BFC7] text-sm">
                   Tu perfil está en nuestra bolsa de talento. Te contactaremos cuando surja una posición que encaje contigo.

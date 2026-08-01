@@ -7,8 +7,9 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { perfilAPI } from '../services/api';
+import { perfilAPI, authAPI, pagosCandidatoAPI } from '../services/api';
 import { FONT_SANS, FONT_SERIF } from '../theme';
+import PagoCandidatoCTA from '../components/PagoCandidatoCTA';
 
 const ESTADOS_CIVILES = ['Soltero(a)', 'Casado(a)', 'Unión libre', 'Divorciado(a)', 'Viudo(a)'];
 const NIVELES_ACADEMICOS = [
@@ -89,6 +90,9 @@ export default function PerfilPage() {
   const [analizandoCV, setAnalizandoCV] = useState(false);
   const [camposDetectados, setCamposDetectados] = useState(false);
   const [referencias, setReferencias] = useState([]);
+  const [analisisCVComprado, setAnalisisCVComprado] = useState(false);
+  const [analisisCV, setAnalisisCV] = useState(null);
+  const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
 
   const candidatoId = localStorage.getItem('candidatoId');
 
@@ -120,6 +124,25 @@ export default function PerfilPage() {
         }
       } catch (err) {
         console.error('No se pudieron precargar las referencias:', err);
+      }
+      if (authAPI.estaAutenticado()) {
+        try {
+          const compras = await pagosCandidatoAPI.compras(candidatoId);
+          if (compras.analisis_cv) {
+            setAnalisisCVComprado(true);
+            setCargandoAnalisis(true);
+            try {
+              const data = await pagosCandidatoAPI.analisisCV(candidatoId);
+              setAnalisisCV(data.analisis);
+            } catch (err) {
+              console.error('No se pudo cargar el análisis de CV:', err);
+            } finally {
+              setCargandoAnalisis(false);
+            }
+          }
+        } catch (err) {
+          console.error('No se pudieron cargar las compras del candidato:', err);
+        }
       }
     })();
   }, [candidatoId]);
@@ -370,6 +393,47 @@ export default function PerfilPage() {
                   </p>
                 )}
               </Campo>
+
+              {cvExistente && authAPI.estaAutenticado() && (
+                <div className="pt-2">
+                  {analisisCVComprado ? (
+                    <div className="border border-[#2a2a2a] p-6">
+                      <h2 className="text-sm font-semibold text-[#666] uppercase tracking-wide mb-4">Análisis de tu CV</h2>
+                      {cargandoAnalisis && <p className="text-[#B8BFC7] text-sm">Analizando tu CV...</p>}
+                      {!cargandoAnalisis && analisisCV && (
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-[#C9A14A] font-semibold text-sm mb-2">Fortalezas</p>
+                            <ul className="list-disc list-inside text-[#B8BFC7] text-sm space-y-1">
+                              {analisisCV.fortalezas?.map((f, i) => <li key={i}>{f}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-[#C9A14A] font-semibold text-sm mb-2">Áreas de mejora</p>
+                            <ul className="list-disc list-inside text-[#B8BFC7] text-sm space-y-1">
+                              {analisisCV.areas_de_mejora?.map((d, i) => <li key={i}>{d}</li>)}
+                            </ul>
+                          </div>
+                          {analisisCV.resumen && (
+                            <p className="text-white text-sm border-l-4 border-[#C9A14A] pl-4 py-1">{analisisCV.resumen}</p>
+                          )}
+                        </div>
+                      )}
+                      {!cargandoAnalisis && !analisisCV && (
+                        <p className="text-[#B8BFC7] text-sm">No pudimos generar tu análisis todavía. Intenta más tarde.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <PagoCandidatoCTA
+                      candidatoId={candidatoId}
+                      tipo="analisis_cv"
+                      precio={500}
+                      titulo="Analiza tu CV con IA"
+                      descripcion="Por RD$500 recibes un reporte con las fortalezas y áreas de mejora de tu CV, para ayudarte a mejorarlo."
+                    />
+                  )}
+                </div>
+              )}
 
               <SeccionTitulo>Referencias laborales (opcional)</SeccionTitulo>
               <p className="text-xs text-[#666] -mt-2">

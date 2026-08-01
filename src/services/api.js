@@ -235,6 +235,31 @@ export const pagosAPI = {
 };
 
 /**
+ * PAGOS DEL CANDIDATO (estatus del proceso / resultados / análisis de CV)
+ */
+export const pagosCandidatoAPI = {
+  compras: async (candidatoId) => {
+    const response = await apiClient.get(`/api/candidatos/${candidatoId}/compras`);
+    return response.data;
+  },
+
+  checkout: async (candidatoId, tipo, documento) => {
+    const response = await apiClient.post(`/api/candidatos/${candidatoId}/pagos/checkout`, { tipo, documento });
+    return response.data;
+  },
+
+  reporteResultados: async (candidatoId) => {
+    const response = await apiClient.get(`/api/candidatos/${candidatoId}/reporte-resultados`);
+    return response.data;
+  },
+
+  analisisCV: async (candidatoId) => {
+    const response = await apiClient.get(`/api/candidatos/${candidatoId}/analisis-cv`);
+    return response.data;
+  },
+};
+
+/**
  * CANDIDATOS
  */
 export const candidatosAPI = {

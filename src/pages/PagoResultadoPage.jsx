@@ -37,11 +37,19 @@ export default function PagoResultadoPage() {
   };
 
   const usuario = authAPI.usuarioActual();
-  const volverA = usuario?.rol === 'empresa' ? '/empresa' : '/reclutador';
+  const volverA = usuario?.rol === 'empresa' ? '/empresa' : usuario?.rol === 'candidato' ? '/mis-aplicaciones' : '/reclutador';
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-600">Verificando el pago...</div>;
   }
+
+  const TITULOS_POR_TIPO = {
+    suscripcion: '¡Suscripción activada!',
+    desbloqueo_candidato: '¡Candidato desbloqueado!',
+    estatus_candidato: '¡Estatus desbloqueado!',
+    resultados_candidato: '¡Resultados desbloqueados!',
+    analisis_cv_candidato: '¡Análisis de CV desbloqueado!',
+  };
 
   const contenido = (() => {
     if (error || !estado) {
@@ -50,7 +58,7 @@ export default function PagoResultadoPage() {
     if (estado.estado === 'completada') {
       return {
         icono: estado.tipo === 'suscripcion' ? '✅' : '🔓',
-        titulo: estado.tipo === 'suscripcion' ? '¡Suscripción activada!' : '¡Candidato desbloqueado!',
+        titulo: TITULOS_POR_TIPO[estado.tipo] || '¡Pago completado!',
         texto: 'Tu pago se procesó correctamente.',
       };
     }

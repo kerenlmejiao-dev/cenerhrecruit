@@ -117,7 +117,12 @@ class Candidato(Base):
     fecha_completitud = Column(DateTime, nullable=True)
     score_final = Column(Float, nullable=True)  # 0-100
     clasificacion = Column(String(20), nullable=True)  # "PRIORITARIO", "VIABLE", "CONSIDERAR", "NO_RECOMENDADO"
-    
+
+    # Reporte de resultados en lenguaje amigable para el candidato (sin score
+    # crudo ni clasificación interna) -- se genera una sola vez con IA cuando
+    # paga por verlo (ver reporte_candidato_service.py) y se cachea aquí.
+    reporte_resultados = Column(JSON, nullable=True)
+
     # Relaciones
     vacante = relationship("Vacante", back_populates="candidatos")
     respuestas = relationship("RespuestaCandidata", back_populates="candidato")
@@ -344,6 +349,11 @@ class CandidatoPerfil(Base):
     contacto_emergencia_telefono = Column(String(30), nullable=True)
     actualizado_en = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Análisis de CV generado por IA (fortalezas/debilidades/sugerencias) --
+    # se genera una sola vez cuando el candidato paga por verlo y se cachea
+    # aquí (ver cv_parser_service.analizar_cv).
+    analisis_cv = Column(JSON, nullable=True)
+
     # Relaciones
     candidato = relationship("Candidato", back_populates="perfil")
 
@@ -486,10 +496,11 @@ class Transaccion(Base):
     __tablename__ = "transacciones"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    tipo = Column(String(30), nullable=False)  # "suscripcion", "desbloqueo_candidato"
+    tipo = Column(String(30), nullable=False)  # "suscripcion", "desbloqueo_candidato",
+    # "estatus_candidato", "resultados_candidato", "analisis_cv_candidato"
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)  # reclutador (suscripción)
     empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=True)  # empresa (desbloqueo)
-    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=True)  # candidato dueño (compras propias) o desbloqueado (empresa)
     monto = Column(Float, nullable=False)
     moneda = Column(String(10), default="DOP")
     order_id = Column(String(150), nullable=False, unique=True)  # ID generado por nosotros, enviado a dLocal
@@ -516,6 +527,27 @@ class CandidatoAcceso(Base):
 
     def __repr__(self):
         return f"<CandidatoAcceso empresa={self.empresa_id} candidato={self.candidato_id}>"
+
+
+# ============================================================================
+# TABLA: Compras del candidato (estatus del proceso / resultados / análisis de CV)
+#
+# A diferencia de CandidatoAcceso (una empresa desbloqueando a un candidato),
+# aquí el propio candidato paga por desbloquear algo sobre SÍ mismo. "tipo"
+# es uno de "estatus", "resultados", "analisis_cv" (ver PRODUCTOS_CANDIDATO
+# en dlocal_service.py).
+# ============================================================================
+class CandidatoCompra(Base):
+    __tablename__ = "candidato_compras"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidato_id = Column(String(50), ForeignKey("candidatos.id"), nullable=False)
+    tipo = Column(String(30), nullable=False)
+    transaccion_id = Column(Integer, ForeignKey("transacciones.id"), nullable=True)
+    desbloqueado_en = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<CandidatoCompra candidato={self.candidato_id} tipo={self.tipo}>"
 
 
 # ============================================================================
