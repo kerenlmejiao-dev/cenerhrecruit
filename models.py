@@ -273,6 +273,11 @@ class Usuario(Base):
     creado_en = Column(DateTime, default=datetime.utcnow)
     ultimo_login = Column(DateTime, nullable=True)
 
+    # Recuperación de contraseña ("olvidé mi contraseña"), válido para
+    # cualquier rol -- ver auth_router.py (olvide-password / restablecer-password).
+    reset_token = Column(String(64), nullable=True)
+    reset_token_expira = Column(DateTime, nullable=True)
+
     # Relaciones
     empresa = relationship("Empresa", back_populates="usuarios")
 

@@ -218,6 +218,73 @@ class EnviadorEmail:
         except Exception as e:
             return {"status": "error", "mensaje": str(e)}
 
+    @staticmethod
+    def enviar_recuperacion_password(
+        email_destinatario: str,
+        nombre_destinatario: str,
+        link_restablecer: str,
+    ) -> dict:
+        """Envía el link para restablecer contraseña (candidato, reclutador,
+        empresa u owner -- cualquier rol usa el mismo flujo). El link ya
+        incluye el token de un solo uso con expiración, ver auth_router.py."""
+        try:
+            mensaje = MIMEMultipart()
+            mensaje["From"] = f"{EnviadorEmail.REMITENTE_NAME} <{EnviadorEmail.REMITENTE_EMAIL}>"
+            mensaje["To"] = email_destinatario
+            mensaje["Subject"] = "Recupera tu contraseña - CENERH Recruit OS"
+
+            cuerpo = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div style="background-color: #0D0D0D; color: white; padding: 20px; text-align: center;">
+                        <h1 style="margin: 0; font-size: 24px;">CENERH CONSULTING</h1>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #C9A14A;">CONSULTING</p>
+                    </div>
+                    <div style="padding: 30px; background-color: #f9f9f9;">
+                        <h2 style="color: #D62828; font-size: 18px;">Hola, {nombre_destinatario}</h2>
+                        <p>Recibimos una solicitud para restablecer tu contraseña. Si fuiste tú, haz clic en el
+                        siguiente botón (válido por 1 hora):</p>
+                        <p style="text-align: center; margin: 30px 0;">
+                            <a href="{link_restablecer}" style="background-color: #D62828; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold;">
+                                RESTABLECER CONTRASEÑA
+                            </a>
+                        </p>
+                        <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                            Si no solicitaste esto, puedes ignorar este correo -- tu contraseña actual sigue siendo válida.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+
+            mensaje.attach(MIMEText(cuerpo, "html"))
+
+            if not EnviadorEmail.SMTP_USER or not EnviadorEmail.SMTP_PASSWORD:
+                print(f"📧 EMAIL SIMULADO (MOCK MODE - falta SMTP_USER/SMTP_PASSWORD en .env):")
+                print(f"   Para: {email_destinatario}")
+                print(f"   Asunto: Recupera tu contraseña - CENERH Recruit OS")
+                print(f"   Link: {link_restablecer}")
+                return {
+                    "status": "success",
+                    "mensaje": f"Email simulado para {email_destinatario} (configura SMTP_USER/SMTP_PASSWORD para envío real)",
+                    "modo": "simulado (mock)",
+                }
+
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            try:
+                server.starttls()
+                server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
+                server.send_message(mensaje)
+            finally:
+                server.quit()
+
+            return {"status": "success", "mensaje": f"Email enviado a {email_destinatario}", "modo": "real"}
+
+        except Exception as e:
+            return {"status": "error", "mensaje": str(e)}
+
 
 # Test
 if __name__ == "__main__":

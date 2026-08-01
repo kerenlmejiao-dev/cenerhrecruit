@@ -32,6 +32,8 @@ import BolsaTalentoPage from './pages/reclutador/BolsaTalentoPage';
 import DashboardEmpresa from './pages/empresa/DashboardEmpresa';
 import VacanteDetalleEmpresa from './pages/empresa/VacanteDetalleEmpresa';
 import PagoResultadoPage from './pages/PagoResultadoPage';
+import OlvidePasswordPage from './pages/OlvidePasswordPage';
+import RestablecerPasswordPage from './pages/RestablecerPasswordPage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -72,6 +74,10 @@ export default function App() {
         <Route path="/registro-reclutador" element={<RegistroReclutadorPage />} />
         <Route path="/planes" element={<PlanesPage />} />
         <Route path="/referencia/:token" element={<ReferenciaFormPage />} />
+
+        {/* Recuperación de contraseña (cualquier rol) */}
+        <Route path="/olvide-password" element={<OlvidePasswordPage />} />
+        <Route path="/restablecer-password/:token" element={<RestablecerPasswordPage />} />
 
         {/* Portal Reclutador */}
         <Route path="/reclutador/membresia-requerida" element={

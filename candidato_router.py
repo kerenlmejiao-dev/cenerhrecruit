@@ -30,7 +30,7 @@ from models import (
 router = APIRouter(prefix="/api/candidatos", tags=["Candidato - Perfil y Assessments"])
 
 UPLOADS_DIR = Path(__file__).resolve().parent / "uploads" / "cv"
-TIPOS_CV_PERMITIDOS = {".pdf", ".doc", ".docx"}
+TIPOS_CV_PERMITIDOS = {".pdf", ".doc", ".docx", ".jpg", ".jpeg"}
 MAX_CV_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
@@ -108,6 +108,10 @@ def guardar_cuestionario(
     candidato = db.query(Candidato).filter_by(id=candidato_id).first()
     if not candidato:
         raise HTTPException(status_code=404, detail=f"Candidato '{candidato_id}' no encontrado")
+
+    perfil_existente = db.query(CandidatoPerfil).filter_by(candidato_id=candidato_id).first()
+    if not perfil_existente or not perfil_existente.cv_filename:
+        raise HTTPException(status_code=400, detail="Debes subir tu currículum (PDF, Word o JPG) antes de continuar")
 
     perfil = _get_or_crear_perfil(db, candidato_id)
     # exclude_unset: solo pisa los campos que realmente vengan en el body.

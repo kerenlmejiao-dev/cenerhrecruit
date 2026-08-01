@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { perfilAPI, authAPI, pagosCandidatoAPI } from '../services/api';
 import { FONT_SANS, FONT_SERIF } from '../theme';
 import PagoCandidatoCTA from '../components/PagoCandidatoCTA';
@@ -221,9 +221,14 @@ export default function PerfilPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
+    if (!cvExistente) {
+      setError('Debes subir tu currículum (PDF, Word o JPG) antes de continuar. Sin eso no podemos iniciar tu proceso de reclutamiento.');
+      return;
+    }
+
+    setLoading(true);
     try {
       // ciudad_provincia ya cubre "dónde vive"; mantenemos ubicacion = ciudad_provincia
       // por compatibilidad con el campo legado que usa el resto del sistema.
@@ -259,9 +264,28 @@ export default function PerfilPage() {
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-4" style={FONT_SANS}>
         <div className="border border-[#2a2a2a] p-8 max-w-md text-center">
           <h1 className="text-2xl font-semibold text-white mb-2" style={FONT_SERIF}>¡Gracias!</h1>
-          <p className="text-[#B8BFC7] text-sm">
+          <p className="text-[#B8BFC7] text-sm mb-6">
             Tu perfil quedó registrado en nuestra bolsa de talento. Te contactaremos cuando surja una posición que encaje contigo.
           </p>
+          <p className="text-[#B8BFC7] text-sm mb-6">
+            Mientras tanto, puedes revisar si ya hay una vacante publicada que te interese.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link
+              to="/aplicar"
+              className="bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-3 px-6 transition"
+            >
+              VER VACANTES DISPONIBLES
+            </Link>
+            {authAPI.estaAutenticado() && (
+              <Link
+                to="/mis-aplicaciones"
+                className="border border-[#2a2a2a] hover:border-[#C9A14A] text-white font-semibold py-3 px-6 transition"
+              >
+                Ir a mis aplicaciones
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -395,14 +419,17 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              <Campo label="Currículum (PDF, DOC o DOCX)">
+              <Campo label="Currículum (PDF, Word o JPG) *">
                 {cvExistente && !analizandoCV && (
                   <p className="text-xs text-[#666] mb-1">Ya tienes cargado: {cvExistente}. Sube uno nuevo solo si quieres reemplazarlo.</p>
                 )}
                 <input
-                  type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange}
+                  type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg" onChange={handleFileChange}
                   className="w-full text-sm text-[#B8BFC7] file:mr-3 file:py-2 file:px-4 file:border-0 file:bg-[#2a2a2a] file:text-white hover:file:bg-[#3a3a3a]"
                 />
+                <p className="text-xs text-[#666] mt-1">
+                  Obligatorio para poder iniciar tu proceso de reclutamiento.
+                </p>
                 {analizandoCV && (
                   <p className="text-xs text-[#C9A14A] mt-1">Leyendo tu CV para precargar el formulario...</p>
                 )}

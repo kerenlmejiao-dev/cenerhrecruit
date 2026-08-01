@@ -80,6 +80,20 @@ export const authAPI = {
     localStorage.setItem('authUsuario', JSON.stringify(response.data));
     return response.data;
   },
+
+  // Recuperación de contraseña -- sirve para cualquier rol (candidato,
+  // reclutador, empresa, owner), todos son cuentas Usuario.
+  olvidePassword: async (email) => {
+    const response = await apiClient.post('/api/auth/olvide-password', { email });
+    return response.data;
+  },
+
+  restablecerPassword: async (token, password) => {
+    const response = await apiClient.post('/api/auth/restablecer-password', { token, password });
+    localStorage.setItem('authToken', response.data.access_token);
+    localStorage.setItem('authUsuario', JSON.stringify(response.data.usuario));
+    return response.data;
+  },
 };
 
 /**

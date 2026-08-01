@@ -9,6 +9,8 @@ y datos de candidatos.
 """
 
 import os
+import secrets
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,9 +19,12 @@ from sqlalchemy.orm import Session
 
 from auth_users import create_access_token, get_current_user, hash_password, verify_password
 from database import get_db
+from email_sender import EnviadorEmail
 from models import Usuario
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
+
+RESET_TOKEN_MINUTOS = 60
 
 
 class LoginPayload(BaseModel):
@@ -106,4 +111,57 @@ def me(usuario: Usuario = Depends(get_current_user)):
         "rol": usuario.rol,
         "empresa_id": usuario.empresa_id,
         "documento": usuario.documento,
+    }
+
+
+class OlvidePasswordPayload(BaseModel):
+    email: EmailStr
+
+
+@router.post("/olvide-password")
+def olvide_password(payload: OlvidePasswordPayload, db: Session = Depends(get_db)):
+    """Sirve para cualquier rol (candidato, reclutador, empresa, owner) --
+    todos son cuentas Usuario. Siempre responde igual exista o no el correo,
+    para no revelar qué emails tienen cuenta."""
+    usuario = db.query(Usuario).filter_by(email=payload.email).first()
+    if usuario and usuario.activo:
+        usuario.reset_token = secrets.token_urlsafe(32)
+        usuario.reset_token_expira = datetime.utcnow() + timedelta(minutes=RESET_TOKEN_MINUTOS)
+        db.commit()
+
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        link = f"{frontend_url}/restablecer-password/{usuario.reset_token}"
+        EnviadorEmail.enviar_recuperacion_password(usuario.email, usuario.nombre, link)
+
+    return {"status": "success", "mensaje": "Si el correo tiene una cuenta, te enviamos un enlace para restablecer tu contraseña."}
+
+
+class RestablecerPasswordPayload(BaseModel):
+    token: str
+    password: str = Field(..., min_length=8)
+
+
+@router.post("/restablecer-password")
+def restablecer_password(payload: RestablecerPasswordPayload, db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter_by(reset_token=payload.token).first()
+    if not usuario or not usuario.reset_token_expira or usuario.reset_token_expira < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="El enlace es inválido o ya expiró. Solicita uno nuevo.")
+
+    usuario.password_hash = hash_password(payload.password)
+    usuario.reset_token = None
+    usuario.reset_token_expira = None
+    db.commit()
+
+    token = create_access_token(usuario)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "usuario": {
+            "id": usuario.id,
+            "email": usuario.email,
+            "nombre": usuario.nombre,
+            "rol": usuario.rol,
+            "empresa_id": usuario.empresa_id,
+            "documento": usuario.documento,
+        },
     }
