@@ -48,7 +48,7 @@ def _requiere_dlocal():
     if not dlocal_service.dlocal_configurado():
         raise HTTPException(
             status_code=503,
-            detail="dLocal no está configurado (faltan DLOCAL_X_LOGIN/DLOCAL_X_TRANS_KEY/DLOCAL_SECRET_KEY en .env). Los pagos están deshabilitados.",
+            detail="dLocal no está configurado (faltan DLOCALGO_API_KEY/DLOCALGO_SECRET_KEY en .env). Los pagos están deshabilitados.",
         )
 
 
@@ -68,7 +68,7 @@ def _procesar_resultado_pago(db: Session, transaccion: Transaccion, estado_dloca
                 suscripcion.estado = "activa"
                 suscripcion.fecha_inicio = suscripcion.fecha_inicio or datetime.utcnow()
                 base = suscripcion.fecha_renovacion if (suscripcion.fecha_renovacion and suscripcion.fecha_renovacion > datetime.utcnow()) else datetime.utcnow()
-                suscripcion.fecha_renovacion = base + timedelta(days=30)
+                suscripcion.fecha_renovacion = base + timedelta(days=dlocal_service.DURACION_MEMBRESIA_DIAS)
 
         elif transaccion.tipo == "desbloqueo_candidato":
             existente = db.query(CandidatoAcceso).filter_by(
@@ -295,28 +295,35 @@ def estado_transaccion(
 
 
 # ============================================================================
-# WEBHOOK DE DLOCAL
+# WEBHOOK DE DLOCAL GO
+#
+# dLocal Go solo envía {"payment_id": "..."} en la notificación -- sin
+# order_id ni status -- así que hay que consultar el pago aparte para saber
+# qué pasó, y hacer el match contra nuestra Transaccion por dlocal_payment_id
+# (guardado al crear el checkout), no por order_id.
 # ============================================================================
 @router.post("/webhooks/dlocal")
 async def webhook_dlocal(request: Request, db: Session = Depends(get_db)):
     raw_body = (await request.body()).decode("utf-8")
-    x_date = request.headers.get("x-date", "")
     authorization = request.headers.get("authorization", "")
 
-    if not dlocal_service.verificar_notificacion(x_date, authorization, raw_body):
+    if not dlocal_service.verificar_notificacion(raw_body, authorization):
         raise HTTPException(status_code=400, detail="Firma de notificación inválida")
 
     data = await request.json()
-    order_id = data.get("order_id")
-    estado_dlocal = data.get("status", "")
+    payment_id = data.get("payment_id")
+    if not payment_id:
+        return {"status": "ok"}
 
-    transaccion = db.query(Transaccion).filter_by(order_id=order_id).first()
+    transaccion = db.query(Transaccion).filter_by(dlocal_payment_id=payment_id).first()
     if not transaccion:
         return {"status": "ok"}  # Notificación de un pago que no reconocemos; se ignora
 
-    if not transaccion.dlocal_payment_id:
-        transaccion.dlocal_payment_id = data.get("id")
+    try:
+        info = dlocal_service.consultar_pago(payment_id)
+    except Exception:
+        return {"status": "ok"}  # dLocal reintenta la notificación cada 10 min
 
-    _procesar_resultado_pago(db, transaccion, estado_dlocal)
+    _procesar_resultado_pago(db, transaccion, info.get("status", ""))
 
     return {"status": "ok"}
