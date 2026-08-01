@@ -92,7 +92,9 @@ export default function PerfilPage() {
   const [referencias, setReferencias] = useState([]);
   const [analisisCVComprado, setAnalisisCVComprado] = useState(false);
   const [analisisCV, setAnalisisCV] = useState(null);
-  const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
+  const [cuestionarioCV, setCuestionarioCV] = useState({ cargo_aspira: '', mayor_fortaleza: '', que_mejorar: '' });
+  const [enviandoCuestionarioCV, setEnviandoCuestionarioCV] = useState(false);
+  const [errorCuestionarioCV, setErrorCuestionarioCV] = useState('');
 
   const candidatoId = localStorage.getItem('candidatoId');
 
@@ -130,14 +132,11 @@ export default function PerfilPage() {
           const compras = await pagosCandidatoAPI.compras(candidatoId);
           if (compras.analisis_cv) {
             setAnalisisCVComprado(true);
-            setCargandoAnalisis(true);
             try {
               const data = await pagosCandidatoAPI.analisisCV(candidatoId);
               setAnalisisCV(data.analisis);
             } catch (err) {
-              console.error('No se pudo cargar el análisis de CV:', err);
-            } finally {
-              setCargandoAnalisis(false);
+              console.error('No se pudo consultar el análisis de CV:', err);
             }
           }
         } catch (err) {
@@ -197,6 +196,26 @@ export default function PerfilPage() {
       console.error('Error al subir/leer el CV:', err);
     } finally {
       setAnalizandoCV(false);
+    }
+  };
+
+  const handleCuestionarioCVChange = (e) => {
+    const { name, value } = e.target;
+    setCuestionarioCV(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEnviarCuestionarioCV = async (e) => {
+    e.preventDefault();
+    setEnviandoCuestionarioCV(true);
+    setErrorCuestionarioCV('');
+    try {
+      const data = await pagosCandidatoAPI.enviarCuestionarioCV(candidatoId, cuestionarioCV);
+      setAnalisisCV(data.analisis);
+    } catch (err) {
+      setErrorCuestionarioCV(err.response?.data?.detail || 'No se pudo generar tu análisis. Intenta de nuevo.');
+      console.error(err);
+    } finally {
+      setEnviandoCuestionarioCV(false);
     }
   };
 
@@ -397,10 +416,9 @@ export default function PerfilPage() {
               {cvExistente && authAPI.estaAutenticado() && (
                 <div className="pt-2">
                   {analisisCVComprado ? (
-                    <div className="border border-[#2a2a2a] p-6">
-                      <h2 className="text-sm font-semibold text-[#666] uppercase tracking-wide mb-4">Análisis de tu CV</h2>
-                      {cargandoAnalisis && <p className="text-[#B8BFC7] text-sm">Analizando tu CV...</p>}
-                      {!cargandoAnalisis && analisisCV && (
+                    analisisCV ? (
+                      <div className="border border-[#2a2a2a] p-6">
+                        <h2 className="text-sm font-semibold text-[#666] uppercase tracking-wide mb-4">Análisis de tu CV</h2>
                         <div className="space-y-4">
                           <div>
                             <p className="text-[#C9A14A] font-semibold text-sm mb-2">Fortalezas</p>
@@ -418,18 +436,51 @@ export default function PerfilPage() {
                             <p className="text-white text-sm border-l-4 border-[#C9A14A] pl-4 py-1">{analisisCV.resumen}</p>
                           )}
                         </div>
-                      )}
-                      {!cargandoAnalisis && !analisisCV && (
-                        <p className="text-[#B8BFC7] text-sm">No pudimos generar tu análisis todavía. Intenta más tarde.</p>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="border border-[#2a2a2a] p-6">
+                        <h2 className="text-sm font-semibold text-[#666] uppercase tracking-wide mb-1">Ya pagaste tu análisis de CV</h2>
+                        <p className="text-[#B8BFC7] text-sm mb-4">
+                          Responde estas 3 preguntas cortas para que el análisis sea más preciso y útil para ti.
+                        </p>
+                        {errorCuestionarioCV && <p className="text-[#D62828] text-sm mb-3">{errorCuestionarioCV}</p>}
+                        <div className="space-y-3">
+                          <Campo label="¿A qué tipo de cargo aspiras a futuro?">
+                            <input
+                              type="text" name="cargo_aspira" value={cuestionarioCV.cargo_aspira}
+                              onChange={handleCuestionarioCVChange} className={inputClass}
+                            />
+                          </Campo>
+                          <Campo label="¿Cuál consideras tu mayor fortaleza profesional?">
+                            <input
+                              type="text" name="mayor_fortaleza" value={cuestionarioCV.mayor_fortaleza}
+                              onChange={handleCuestionarioCVChange} className={inputClass}
+                            />
+                          </Campo>
+                          <Campo label="¿Qué te gustaría mejorar de tu perfil o tu CV?">
+                            <input
+                              type="text" name="que_mejorar" value={cuestionarioCV.que_mejorar}
+                              onChange={handleCuestionarioCVChange} className={inputClass}
+                            />
+                          </Campo>
+                          <button
+                            type="button"
+                            onClick={handleEnviarCuestionarioCV}
+                            disabled={enviandoCuestionarioCV}
+                            className="bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-2.5 px-6 transition disabled:opacity-50"
+                          >
+                            {enviandoCuestionarioCV ? 'GENERANDO TU ANÁLISIS...' : 'GENERAR MI ANÁLISIS'}
+                          </button>
+                        </div>
+                      </div>
+                    )
                   ) : (
                     <PagoCandidatoCTA
                       candidatoId={candidatoId}
                       tipo="analisis_cv"
                       precio={500}
                       titulo="Analiza tu CV con IA"
-                      descripcion="Por RD$500 recibes un reporte con las fortalezas y áreas de mejora de tu CV, para ayudarte a mejorarlo."
+                      descripcion="Por RD$500 recibes un reporte con las fortalezas y áreas de mejora de tu CV según la posición a la que aplicas, para ayudarte a mejorarlo."
                     />
                   )}
                 </div>

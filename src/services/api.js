@@ -257,6 +257,11 @@ export const pagosCandidatoAPI = {
     const response = await apiClient.get(`/api/candidatos/${candidatoId}/analisis-cv`);
     return response.data;
   },
+
+  enviarCuestionarioCV: async (candidatoId, respuestas) => {
+    const response = await apiClient.post(`/api/candidatos/${candidatoId}/analisis-cv`, respuestas);
+    return response.data;
+  },
 };
 
 /**

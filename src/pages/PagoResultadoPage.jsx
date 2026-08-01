@@ -37,11 +37,20 @@ export default function PagoResultadoPage() {
   };
 
   const usuario = authAPI.usuarioActual();
-  const volverA = usuario?.rol === 'empresa' ? '/empresa' : usuario?.rol === 'candidato' ? '/mis-aplicaciones' : '/reclutador';
+
+  const VOLVER_POR_TIPO_CANDIDATO = {
+    estatus_candidato: '/mis-aplicaciones',
+    resultados_candidato: '/resultados',
+    analisis_cv_candidato: '/perfil',
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-600">Verificando el pago...</div>;
   }
+
+  const volverA = usuario?.rol === 'candidato'
+    ? (VOLVER_POR_TIPO_CANDIDATO[estado?.tipo] || '/mis-aplicaciones')
+    : usuario?.rol === 'empresa' ? '/empresa' : '/reclutador';
 
   const TITULOS_POR_TIPO = {
     suscripcion: '¡Suscripción activada!',

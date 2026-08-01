@@ -438,6 +438,35 @@ def obtener_analisis_cv(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(require_role("candidato")),
 ):
+    """Solo consulta el estado -- no genera nada. Si ya pagó pero todavía no
+    respondió el cuestionario (ver POST de abajo), "analisis" viene en null y
+    el frontend muestra el cuestionario."""
+    candidato = _validar_propietario_candidato(db, candidato_id, usuario)
+
+    if not db.query(CandidatoCompra).filter_by(candidato_id=candidato_id, tipo="analisis_cv").first():
+        raise HTTPException(status_code=402, detail="Todavía no has pagado por el análisis de tu CV")
+
+    perfil = candidato.perfil
+    return {"analisis": perfil.analisis_cv if perfil else None}
+
+
+class CuestionarioAnalisisCVPayload(BaseModel):
+    cargo_aspira: str | None = None
+    mayor_fortaleza: str | None = None
+    que_mejorar: str | None = None
+
+
+@router.post("/candidatos/{candidato_id}/analisis-cv")
+def generar_analisis_cv(
+    candidato_id: str,
+    payload: CuestionarioAnalisisCVPayload,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("candidato")),
+):
+    """Genera (o regenera) el análisis de CV a partir del cuestionario que el
+    candidato responde después de pagar -- se contextualiza con la posición
+    específica a la que aplicó (candidato.vacante) además del CV y sus
+    respuestas."""
     candidato = _validar_propietario_candidato(db, candidato_id, usuario)
 
     if not db.query(CandidatoCompra).filter_by(candidato_id=candidato_id, tipo="analisis_cv").first():
@@ -447,10 +476,15 @@ def obtener_analisis_cv(
     if not perfil or not perfil.cv_texto_extraido:
         raise HTTPException(status_code=400, detail="No encontramos tu CV. Súbelo de nuevo desde tu perfil")
 
-    if perfil.analisis_cv:
-        return {"analisis": perfil.analisis_cv}
+    vacante_contexto = None
+    if candidato.vacante:
+        vacante_contexto = {
+            "nombre": candidato.vacante.nombre,
+            "descripcion": candidato.vacante.descripcion,
+            "requisitos": candidato.vacante.requisitos,
+        }
 
-    analisis = cv_parser_service.analizar_cv(perfil.cv_texto_extraido)
+    analisis = cv_parser_service.analizar_cv(perfil.cv_texto_extraido, vacante_contexto, payload.model_dump())
     if not analisis:
         raise HTTPException(status_code=503, detail="No pudimos generar tu análisis todavía. Intenta de nuevo en unos minutos.")
 
