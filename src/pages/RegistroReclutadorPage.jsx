@@ -13,7 +13,7 @@ export default function RegistroReclutadorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    nombre: '', email: '', password: '', codigo_invitacion: '',
+    nombre: '', email: '', password: '', codigo_invitacion: '', telefono: '',
   });
 
   const handleChange = (e) => {
@@ -93,6 +93,15 @@ export default function RegistroReclutadorPage() {
                   className={inputClass}
                   placeholder="Mínimo 8 caracteres"
                 />
+              </div>
+              <div>
+                <label className={labelClass}>WhatsApp (opcional)</label>
+                <input
+                  type="tel" name="telefono" value={formData.telefono} onChange={handleChange}
+                  className={inputClass}
+                  placeholder="+1-809-000-0000"
+                />
+                <p className="text-xs text-[#666] mt-1">Te avisamos por aquí cuando un candidato aplique a tus vacantes.</p>
               </div>
               <div>
                 <label className={labelClass}>Código de invitación</label>

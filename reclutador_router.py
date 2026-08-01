@@ -411,6 +411,12 @@ def cambiar_status_reclutamiento(
     candidato.status_reclutamiento = payload.status
     db.commit()
 
+    if candidato.telefono:
+        import whatsapp_service
+
+        nombre_vacante = candidato.vacante.nombre if candidato.vacante else "tu proceso con nosotros"
+        whatsapp_service.notificar_cambio_status(candidato.telefono, candidato.nombre, payload.status, nombre_vacante)
+
     return {"status": "success", "candidato_id": candidato.id, "status_reclutamiento": candidato.status_reclutamiento}
 
 

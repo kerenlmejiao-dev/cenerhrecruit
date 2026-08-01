@@ -9,6 +9,7 @@ y datos de candidatos.
 """
 
 import os
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
@@ -31,6 +32,7 @@ class RegistroReclutadorPayload(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     codigo_invitacion: str
+    telefono: Optional[str] = None  # WhatsApp, para notificarte nuevas aplicaciones
 
 
 @router.post("/registro")
@@ -49,6 +51,7 @@ def registro_reclutador(payload: RegistroReclutadorPayload, db: Session = Depend
         password_hash=hash_password(payload.password),
         nombre=payload.nombre,
         rol="reclutador",
+        telefono=payload.telefono,
     )
     db.add(usuario)
     db.commit()

@@ -263,6 +263,7 @@ class Usuario(Base):
     rol = Column(String(20), nullable=False)  # "owner", "reclutador", "empresa"
     empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=True)  # solo para rol="empresa"
     documento = Column(String(30), nullable=True)  # cédula/RNC - requerido por dLocal para pagos con tarjeta en RD
+    telefono = Column(String(30), nullable=True)  # WhatsApp, para notificarle nuevas aplicaciones
     activo = Column(Boolean, default=True)
     creado_en = Column(DateTime, default=datetime.utcnow)
     ultimo_login = Column(DateTime, nullable=True)

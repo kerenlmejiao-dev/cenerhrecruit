@@ -584,6 +584,13 @@ async def crear_candidato(
             ]
             tests_a_responder = tests_desde_relacion or vacante.tests_a_aplicar
 
+        if vacante and vacante.creado_por_usuario_id:
+            reclutador_dueno = db.query(Usuario).filter_by(id=vacante.creado_por_usuario_id).first()
+            if reclutador_dueno and reclutador_dueno.telefono:
+                import whatsapp_service
+
+                whatsapp_service.notificar_nueva_aplicacion(reclutador_dueno.telefono, candidato.nombre, vacante.nombre)
+
         return {
             "status": "success",
             "candidato_id": candidato.id,
