@@ -38,6 +38,14 @@ from scoring import SistemaScoring
 router = APIRouter(prefix="/api", tags=["Pagos"])
 
 
+def _id_para_order_id(texto: str) -> str:
+    """dLocal Go valida order_id con un formato más estricto que nuestros
+    IDs internos -- los candidato_id llevan guion bajo ("cand_abc123"), que
+    dLocal Go rechaza. Se reemplaza por guion medio solo para el order_id
+    que se le envía a dLocal (el candidato_id real en nuestra base no cambia)."""
+    return texto.replace("_", "-")
+
+
 @router.get("/planes")
 def listar_planes_publico():
     """Planes de membresía, públicos (sin login) -- para la página de
@@ -289,7 +297,7 @@ def desbloquear_candidato(
     if not usuario.documento:
         raise HTTPException(status_code=400, detail="Falta la cédula/RNC para procesar el pago")
 
-    order_id = f"unlock-{usuario.empresa_id}-{candidato_id}-{uuid.uuid4().hex[:10]}"
+    order_id = f"unlock-{usuario.empresa_id}-{_id_para_order_id(candidato_id)}-{uuid.uuid4().hex[:10]}"
     transaccion = Transaccion(
         tipo="desbloqueo_candidato", empresa_id=usuario.empresa_id, candidato_id=candidato_id,
         monto=dlocal_service.PRECIO_DESBLOQUEO_CANDIDATO,
@@ -387,7 +395,7 @@ def crear_checkout_candidato(
     if not documento:
         raise HTTPException(status_code=400, detail="Falta la cédula para procesar el pago")
 
-    order_id = f"cand-{payload.tipo}-{candidato_id}-{uuid.uuid4().hex[:10]}"
+    order_id = f"cand-{payload.tipo}-{_id_para_order_id(candidato_id)}-{uuid.uuid4().hex[:10]}"
     transaccion = Transaccion(
         tipo=f"{payload.tipo}_candidato", candidato_id=candidato_id,
         monto=dlocal_service.PRODUCTOS_CANDIDATO[payload.tipo]["precio"],

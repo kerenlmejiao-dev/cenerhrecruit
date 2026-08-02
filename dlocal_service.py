@@ -21,6 +21,7 @@ consultarlo aparte con GET /v1/payments/{id}.
 import hashlib
 import hmac
 import os
+import re
 
 import requests
 
@@ -138,7 +139,7 @@ def _crear_pago_redirect(
         "payer": {
             "name": payer_nombre,
             "email": payer_email,
-            "document": payer_documento,
+            "document": re.sub(r"\D", "", payer_documento or ""),
         },
     }
     if NOTIFICATION_BASE_URL:
