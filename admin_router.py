@@ -237,3 +237,27 @@ def activar_membresia(payload: ActivarMembresiaPayload):
         raise
     finally:
         session.close()
+
+
+@router.get("/dlocal-diagnostico")
+def dlocal_diagnostico():
+    """Diagnóstico manual para cuando dLocal Go rechaza pagos con un error
+    genérico que no dice qué campo falló: (1) verifica las credenciales y el
+    estado de la cuenta con GET /v1/me, (2) intenta crear un pago de prueba
+    de RD$1 con el payload mínimo (sin datos del pagador) para aislar si el
+    problema es la cuenta/moneda/país o los datos que le mandamos."""
+    if not dlocal_service.dlocal_configurado():
+        raise HTTPException(status_code=503, detail="DLOCALGO_API_KEY/DLOCALGO_SECRET_KEY no están configuradas")
+
+    resultado = {}
+    try:
+        resultado["cuenta"] = dlocal_service.obtener_info_cuenta()
+    except Exception as e:
+        resultado["cuenta"] = {"error": str(e)}
+
+    try:
+        resultado["pago_prueba"] = dlocal_service.crear_pago_prueba_diagnostico()
+    except Exception as e:
+        resultado["pago_prueba"] = {"error": str(e)}
+
+    return resultado

@@ -118,6 +118,41 @@ def _headers() -> dict:
     }
 
 
+def obtener_info_cuenta() -> dict:
+    """GET /v1/me -- endpoint de dLocal Go para verificar credenciales y ver
+    el estado de la cuenta (país, moneda habilitada, etc.). Útil para
+    diagnosticar rechazos de pago que no dicen qué campo específico falló."""
+    respuesta = requests.get(f"{API_BASE_URL}/v1/me", headers=_headers(), timeout=15)
+    try:
+        cuerpo = respuesta.json()
+    except Exception:
+        cuerpo = respuesta.text
+    return {"status_code": respuesta.status_code, "body": cuerpo}
+
+
+def crear_pago_prueba_diagnostico() -> dict:
+    """Crea un pago de prueba (RD$1) con el payload MÍNIMO posible -- sin
+    objeto "payer" -- para aislar si el rechazo viene de los datos del
+    pagador o de la cuenta/moneda/país en sí. No cobra nada hasta que
+    alguien complete el checkout; solo registra la intención de pago."""
+    order_id = f"diagnostico-{os.urandom(4).hex()}"
+    body = {
+        "amount": 1.0,
+        "currency": MONEDA,
+        "country": PAIS,
+        "order_id": order_id,
+        "description": "CENERH diagnostico",
+        "success_url": f"{FRONTEND_URL}/pagos/resultado",
+        "back_url": f"{FRONTEND_URL}/pagos/resultado",
+    }
+    respuesta = requests.post(f"{API_BASE_URL}/v1/payments", json=body, headers=_headers(), timeout=15)
+    try:
+        cuerpo = respuesta.json()
+    except Exception:
+        cuerpo = respuesta.text
+    return {"status_code": respuesta.status_code, "body": cuerpo, "enviado": body}
+
+
 def _crear_pago_redirect(
     monto: float,
     order_id: str,
