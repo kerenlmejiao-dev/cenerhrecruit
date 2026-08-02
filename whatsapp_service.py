@@ -94,3 +94,12 @@ def notificar_cambio_status(telefono_candidato: str, nombre_candidato: str, nuev
         f"avanzó a: {nuevo_status}. Puedes ver el detalle iniciando sesión en tu cuenta."
     )
     return enviar_whatsapp(telefono_candidato, mensaje)
+
+
+def notificar_solicitud_evaluacion(telefono_candidato: str, nombre_candidato: str) -> dict:
+    mensaje = (
+        f"Hola {nombre_candidato}, un reclutador de CENERH Consulting mostró interés en tu perfil de la "
+        f"bolsa de talento y quiere ver tu evaluación. Aplica a una de nuestras vacantes disponibles y "
+        f"completa las pruebas para que puedan verte evaluado(a)."
+    )
+    return enviar_whatsapp(telefono_candidato, mensaje)

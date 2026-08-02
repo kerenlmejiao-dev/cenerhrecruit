@@ -126,11 +126,7 @@ export default function VacanteDetalle() {
       const data = await reclutadorAPI.sugerenciasBolsa(vacanteId);
       setSugerencias(data.sugerencias);
     } catch (err) {
-      if (err.response?.status === 503) {
-        setErrorSugerencias('El análisis de compatibilidad con IA no está configurado todavía.');
-      } else {
-        setErrorSugerencias('No se pudieron cargar sugerencias.');
-      }
+      setErrorSugerencias('No se pudieron cargar sugerencias.');
       console.error(err);
     } finally {
       setCargandoSugerencias(false);
@@ -269,17 +265,17 @@ export default function VacanteDetalle() {
               disabled={cargandoSugerencias}
               className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-purple-700 transition disabled:opacity-50"
             >
-              {cargandoSugerencias ? 'Analizando...' : 'Buscar candidatos compatibles'}
+              {cargandoSugerencias ? 'Cargando...' : 'Ver candidatos de la Bolsa de Talento'}
             </button>
           </div>
-          <p className="text-sm text-gray-500 mb-3">Compara los perfiles de la Bolsa de Talento contra los requisitos de esta vacante. No es una aplicación formal — es solo una sugerencia de a quién invitar.</p>
+          <p className="text-sm text-gray-500 mb-3">Candidatos de la Bolsa de Talento con su evaluación general (la misma que ve cualquier reclutador o empresa que los revise). No es una aplicación formal — es solo una sugerencia de a quién invitar.</p>
 
           {errorSugerencias && (
             <div className="bg-amber-50 border border-amber-300 text-amber-800 text-sm px-4 py-3 rounded mb-3">{errorSugerencias}</div>
           )}
 
           {sugerencias && sugerencias.length === 0 && !errorSugerencias && (
-            <p className="text-sm text-gray-500 italic">No se encontraron candidatos con perfil completo en la Bolsa de Talento.</p>
+            <p className="text-sm text-gray-500 italic">Nadie se ha registrado en la Bolsa de Talento todavía.</p>
           )}
 
           {sugerencias && sugerencias.length > 0 && (
@@ -289,9 +285,24 @@ export default function VacanteDetalle() {
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{s.nombre}</p>
                     <p className="text-xs text-gray-500 mb-1">{s.email}</p>
-                    <p className="text-sm text-gray-600">{s.resumen}</p>
+                    {s.evaluacion?.tipo === 'perfil_ia' && (
+                      <p className="text-sm text-gray-600">{s.evaluacion.resumen}</p>
+                    )}
+                    {(!s.evaluacion || s.evaluacion.tipo === 'pendiente') && (
+                      <p className="text-sm text-gray-400 italic">Sin evaluación todavía</p>
+                    )}
                   </div>
-                  <div className="text-2xl font-bold text-purple-600 whitespace-nowrap">{Math.round(s.score)}<span className="text-sm text-gray-400">/100</span></div>
+                  {s.evaluacion?.tipo === 'pruebas' && (
+                    <div className="text-2xl font-bold text-purple-600 whitespace-nowrap">
+                      {Math.round(s.evaluacion.score_final)}<span className="text-sm text-gray-400">/100</span>
+                    </div>
+                  )}
+                  {s.evaluacion?.tipo === 'perfil_ia' && (
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium text-xs whitespace-nowrap">Perfil evaluado (IA)</span>
+                  )}
+                  {(!s.evaluacion || s.evaluacion.tipo === 'pendiente') && (
+                    <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded font-medium text-xs whitespace-nowrap">Pendiente</span>
+                  )}
                 </div>
               ))}
             </div>

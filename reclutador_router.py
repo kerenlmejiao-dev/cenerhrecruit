@@ -233,20 +233,18 @@ def sugerencias_bolsa_talento_vacante(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(require_role("owner", "reclutador")),
 ):
-    """Compara los candidatos de la Bolsa de Talento contra esta vacante y
-    sugiere a quién invitar. No es una aplicación formal — es apoyo para que
+    """Candidatos de la Bolsa de Talento con su evaluación general (ver
+    obtener_evaluacion_general) -- no es una comparación contra esta vacante
+    en particular, es la misma evaluación cacheada que ve cualquiera que
+    revise a este candidato. No es una aplicación formal, es apoyo para que
     el reclutador decida a quién contactar."""
-    if not compatibilidad_service.ANTHROPIC_API_KEY:
-        raise HTTPException(status_code=503, detail="El análisis de compatibilidad con IA no está configurado todavía")
-
     vacante = db.query(Vacante).filter_by(id=vacante_id).first()
     if not vacante:
         raise HTTPException(status_code=404, detail="Vacante no encontrada")
     if usuario.rol != "owner" and vacante.creado_por_usuario_id != usuario.id:
         raise HTTPException(status_code=403, detail="No autorizado para esta vacante")
 
-    sugerencias = compatibilidad_service.sugerir_candidatos_bolsa(db, vacante)
-    return {"sugerencias": sugerencias}
+    return {"sugerencias": _bolsa_talento_con_evaluacion(db)}
 
 
 @router.get("/vacantes")
@@ -420,6 +418,34 @@ def cambiar_status_reclutamiento(
     return {"status": "success", "candidato_id": candidato.id, "status_reclutamiento": candidato.status_reclutamiento}
 
 
+def _bolsa_talento_con_evaluacion(db: Session, limite: int = 50) -> list[dict]:
+    """Candidatos de la bolsa de talento con su evaluación general (ver
+    compatibilidad_service.obtener_evaluacion_general) -- se calcula una
+    sola vez por candidato y se cachea, nunca se repite en cada vista."""
+    candidatos = (
+        db.query(Candidato)
+        .filter(Candidato.vacante_id.is_(None))
+        .order_by(Candidato.fecha_inicio.desc())
+        .limit(limite)
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "candidato_id": c.id,
+            "nombre": c.nombre,
+            "email": c.email,
+            "telefono": c.telefono,
+            "fecha_inicio": c.fecha_inicio.isoformat() if c.fecha_inicio else None,
+            "tiene_cv": bool(c.perfil and c.perfil.cv_storage_path),
+            "ciudad_provincia": c.perfil.ciudad_provincia if c.perfil else None,
+            "ultimo_cargo": c.perfil.ultimo_cargo if c.perfil else None,
+            "evaluacion": compatibilidad_service.obtener_evaluacion_general(db, c.id),
+        }
+        for c in candidatos
+    ]
+
+
 @router.get("/candidatos/bolsa-talento")
 def listar_bolsa_talento(
     db: Session = Depends(get_db),
@@ -428,27 +454,38 @@ def listar_bolsa_talento(
     """Candidatos que completaron su perfil sin aplicar a una vacante todavía.
     No pertenecen a ningún reclutador en particular, así que cualquier
     reclutador con sesión puede verlos (no hay vacante que filtre por dueño)."""
-    candidatos = (
-        db.query(Candidato)
-        .filter(Candidato.vacante_id.is_(None))
-        .order_by(Candidato.fecha_inicio.desc())
-        .all()
-    )
-    return {
-        "candidatos": [
-            {
-                "id": c.id,
-                "nombre": c.nombre,
-                "email": c.email,
-                "telefono": c.telefono,
-                "fecha_inicio": c.fecha_inicio.isoformat() if c.fecha_inicio else None,
-                "tiene_cv": bool(c.perfil and c.perfil.cv_storage_path),
-                "ciudad_provincia": c.perfil.ciudad_provincia if c.perfil else None,
-                "ultimo_cargo": c.perfil.ultimo_cargo if c.perfil else None,
-            }
-            for c in candidatos
-        ]
-    }
+    return {"candidatos": _bolsa_talento_con_evaluacion(db)}
+
+
+@router.post("/candidatos/{candidato_id}/solicitar-evaluacion")
+def solicitar_evaluacion_candidato(
+    candidato_id: str,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_role("owner", "reclutador")),
+):
+    """Para un candidato de bolsa de talento sin evaluación todavía
+    ("pendiente"): le avisa por WhatsApp/email que hay interés en su perfil,
+    para que complete pruebas psicométricas. Solo notifica -- el candidato
+    decide por su cuenta si aplica a alguna vacante."""
+    candidato = db.query(Candidato).filter_by(id=candidato_id).first()
+    if not candidato:
+        raise HTTPException(status_code=404, detail="Candidato no encontrado")
+    if candidato.vacante_id is not None:
+        raise HTTPException(status_code=400, detail="Este candidato ya tiene una aplicación en curso")
+
+    evaluacion = compatibilidad_service.obtener_evaluacion_general(db, candidato_id)
+    if evaluacion["tipo"] != "pendiente":
+        return {"status": "ya_evaluado"}
+
+    import email_sender
+    import whatsapp_service
+
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    email_sender.EnviadorEmail.enviar_solicitud_evaluacion(candidato.email, candidato.nombre, frontend_url)
+    if candidato.telefono:
+        whatsapp_service.notificar_solicitud_evaluacion(candidato.telefono, candidato.nombre)
+
+    return {"status": "success"}
 
 
 # ============================================================================

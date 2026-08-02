@@ -285,6 +285,73 @@ class EnviadorEmail:
         except Exception as e:
             return {"status": "error", "mensaje": str(e)}
 
+    @staticmethod
+    def enviar_solicitud_evaluacion(
+        email_destinatario: str,
+        nombre_candidato: str,
+        frontend_url: str,
+    ) -> dict:
+        """Un reclutador vio a este candidato en la bolsa de talento (sin
+        evaluación todavía) y quiere verlo evaluado -- le avisamos para que
+        aplique a una vacante y complete sus pruebas."""
+        try:
+            mensaje = MIMEMultipart()
+            mensaje["From"] = f"{EnviadorEmail.REMITENTE_NAME} <{EnviadorEmail.REMITENTE_EMAIL}>"
+            mensaje["To"] = email_destinatario
+            mensaje["Subject"] = "Un reclutador quiere ver tu evaluación - CENERH Recruit OS"
+
+            link_vacantes = f"{frontend_url}/aplicar"
+            cuerpo = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div style="background-color: #0D0D0D; color: white; padding: 20px; text-align: center;">
+                        <h1 style="margin: 0; font-size: 24px;">CENERH CONSULTING</h1>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #C9A14A;">CONSULTING</p>
+                    </div>
+                    <div style="padding: 30px; background-color: #f9f9f9;">
+                        <h2 style="color: #D62828; font-size: 18px;">Hola, {nombre_candidato}</h2>
+                        <p>Un reclutador vio tu perfil en nuestra bolsa de talento y quiere ver tu evaluación,
+                        pero todavía no has completado ninguna prueba.</p>
+                        <p>Aplica a una de nuestras vacantes disponibles y completa las pruebas para que
+                        puedan verte evaluado(a):</p>
+                        <p style="text-align: center; margin: 30px 0;">
+                            <a href="{link_vacantes}" style="background-color: #D62828; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold;">
+                                VER VACANTES DISPONIBLES
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+
+            mensaje.attach(MIMEText(cuerpo, "html"))
+
+            if not EnviadorEmail.SMTP_USER or not EnviadorEmail.SMTP_PASSWORD:
+                print(f"📧 EMAIL SIMULADO (MOCK MODE - falta SMTP_USER/SMTP_PASSWORD en .env):")
+                print(f"   Para: {email_destinatario}")
+                print(f"   Asunto: Un reclutador quiere ver tu evaluación - CENERH Recruit OS")
+                print(f"   Link: {link_vacantes}")
+                return {
+                    "status": "success",
+                    "mensaje": f"Email simulado para {email_destinatario} (configura SMTP_USER/SMTP_PASSWORD para envío real)",
+                    "modo": "simulado (mock)",
+                }
+
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            try:
+                server.starttls()
+                server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
+                server.send_message(mensaje)
+            finally:
+                server.quit()
+
+            return {"status": "success", "mensaje": f"Email enviado a {email_destinatario}", "modo": "real"}
+
+        except Exception as e:
+            return {"status": "error", "mensaje": str(e)}
+
 
 # Test
 if __name__ == "__main__":

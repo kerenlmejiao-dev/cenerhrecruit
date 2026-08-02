@@ -13,6 +13,8 @@ export default function BolsaTalentoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [descargandoCV, setDescargandoCV] = useState('');
+  const [solicitando, setSolicitando] = useState('');
+  const [solicitados, setSolicitados] = useState(new Set());
 
   useEffect(() => {
     cargar();
@@ -27,6 +29,20 @@ export default function BolsaTalentoPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const solicitarEvaluacion = async (candidatoId) => {
+    setSolicitando(candidatoId);
+    setError('');
+    try {
+      await reclutadorAPI.solicitarEvaluacion(candidatoId);
+      setSolicitados(prev => new Set(prev).add(candidatoId));
+    } catch (err) {
+      setError('No se pudo enviar la solicitud de evaluación.');
+      console.error(err);
+    } finally {
+      setSolicitando('');
     }
   };
 
@@ -80,6 +96,7 @@ export default function BolsaTalentoPage() {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Teléfono</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ciudad</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Último cargo</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Evaluación</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ficha</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">CV</th>
                 </tr>
@@ -93,6 +110,39 @@ export default function BolsaTalentoPage() {
                       <td className="px-6 py-4 text-gray-600">{c.telefono || '-'}</td>
                       <td className="px-6 py-4 text-gray-600">{c.ciudad_provincia || '-'}</td>
                       <td className="px-6 py-4 text-gray-600">{c.ultimo_cargo || '-'}</td>
+                      <td className="px-6 py-4 text-sm">
+                        {c.evaluacion?.tipo === 'pruebas' && (
+                          <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                            {Math.round(c.evaluacion.score_final)}/100 — {c.evaluacion.clasificacion}
+                          </span>
+                        )}
+                        {c.evaluacion?.tipo === 'perfil_ia' && (
+                          <span
+                            className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium cursor-help"
+                            title={c.evaluacion.resumen || ''}
+                          >
+                            Perfil evaluado (IA)
+                          </span>
+                        )}
+                        {(!c.evaluacion || c.evaluacion.tipo === 'pendiente') && (
+                          solicitados.has(c.id) ? (
+                            <span className="text-gray-500 italic">Solicitud enviada</span>
+                          ) : (
+                            <div>
+                              <span className="inline-block bg-gray-200 text-gray-600 px-2 py-1 rounded font-medium mb-1">
+                                Pendiente por evaluación
+                              </span>
+                              <button
+                                onClick={() => solicitarEvaluacion(c.id)}
+                                disabled={solicitando === c.id}
+                                className="block text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50"
+                              >
+                                {solicitando === c.id ? 'Enviando...' : 'Solicitar evaluación'}
+                              </button>
+                            </div>
+                          )
+                        )}
+                      </td>
                       <td className="px-6 py-4">
                         <a
                           href="#"
@@ -135,7 +185,7 @@ export default function BolsaTalentoPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                       Nadie se ha registrado en la bolsa de talento todavía
                     </td>
                   </tr>

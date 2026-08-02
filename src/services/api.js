@@ -150,6 +150,11 @@ export const reclutadorAPI = {
     return response.data;
   },
 
+  solicitarEvaluacion: async (candidatoId) => {
+    const response = await apiClient.post(`/api/reclutador/candidatos/${candidatoId}/solicitar-evaluacion`);
+    return response.data;
+  },
+
   cambiarStatusCandidato: async (candidatoId, status) => {
     const response = await apiClient.post(`/api/reclutador/candidatos/${candidatoId}/status`, { status });
     return response.data;

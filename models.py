@@ -123,6 +123,14 @@ class Candidato(Base):
     # paga por verlo (ver reporte_candidato_service.py) y se cachea aquí.
     reporte_resultados = Column(JSON, nullable=True)
 
+    # Evaluación general del candidato para reclutadores/empresas (bolsa de
+    # talento, sin pruebas psicométricas todavía) -- resumen de perfil/CV
+    # generado por IA UNA SOLA VEZ y cacheado aquí, nunca recalculado en cada
+    # vista (ver compatibilidad_service.obtener_evaluacion_general). Si el
+    # candidato completó pruebas psicométricas, esa es la evaluación
+    # "oficial" (score_final/clasificacion arriba) y esto no se usa.
+    evaluacion_perfil_ia = Column(JSON, nullable=True)
+
     # Relaciones
     vacante = relationship("Vacante", back_populates="candidatos")
     respuestas = relationship("RespuestaCandidata", back_populates="candidato")
