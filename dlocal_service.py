@@ -152,7 +152,23 @@ def _crear_pago_redirect(
     )
     data = respuesta.json()
     if respuesta.status_code >= 400:
-        raise RuntimeError(f"dLocal Go rechazó la solicitud: {data}")
+        # dLocal Go no dice qué campo específico fue inválido en su mensaje
+        # de error -- se incluye aquí un resumen de lo que se envió (nombre/
+        # email/documento no son datos sensibles de pago, son los mismos
+        # datos que ya están en nuestra base) para poder diagnosticar sin
+        # necesitar acceso a los logs del servidor.
+        resumen_enviado = {
+            "amount": body["amount"],
+            "currency": body["currency"],
+            "country": body["country"],
+            "order_id": body["order_id"],
+            "description": body["description"],
+            "success_url": body["success_url"],
+            "payer_name": body["payer"]["name"],
+            "payer_email": body["payer"]["email"],
+            "payer_document": body["payer"]["document"],
+        }
+        raise RuntimeError(f"dLocal Go rechazó la solicitud: {data}. Enviado: {resumen_enviado}")
     return data
 
 
