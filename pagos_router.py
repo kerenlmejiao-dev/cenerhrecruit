@@ -66,6 +66,16 @@ def _requiere_dlocal():
             status_code=503,
             detail="dLocal no está configurado (faltan DLOCALGO_API_KEY/DLOCALGO_SECRET_KEY en .env). Los pagos están deshabilitados.",
         )
+    # dLocal Go exige que success_url/back_url sean URLs públicas HTTPS y
+    # rechaza la solicitud completa (error genérico "Invalid values", sin
+    # decir qué campo) si quedan apuntando a localhost por no haber
+    # configurado FRONTEND_URL en producción -- se valida aquí para dar un
+    # error claro en vez de dejar que falle confuso del lado de dLocal.
+    if not dlocal_service.FRONTEND_URL.startswith("https://"):
+        raise HTTPException(
+            status_code=503,
+            detail="FRONTEND_URL no está configurada correctamente en el servidor (debe ser la URL pública https:// del frontend). Los pagos están deshabilitados hasta corregirla.",
+        )
 
 
 def _procesar_resultado_pago(db: Session, transaccion: Transaccion, estado_dlocal: str) -> str:
