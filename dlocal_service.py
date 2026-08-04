@@ -195,9 +195,17 @@ def _crear_pago_redirect(
         "payer": {
             "name": payer_nombre,
             "email": payer_email,
-            "document": re.sub(r"\D", "", payer_documento or ""),
         },
     }
+    documento_limpio = re.sub(r"\D", "", payer_documento or "")
+    if documento_limpio:
+        # dLocal Go exige que "document" venga acompañado de "document_country"
+        # -- enviar "document" solo (sin este campo) lo rechaza con "Invalid
+        # values" sin decir cuál es el problema (confirmado por diagnóstico
+        # manual: el mismo payload sin "document" se acepta, y la respuesta
+        # de dLocal ya trae "document_country" propio).
+        body["payer"]["document"] = documento_limpio
+        body["payer"]["document_country"] = PAIS
     if NOTIFICATION_BASE_URL:
         body["notification_url"] = f"{NOTIFICATION_BASE_URL}/api/webhooks/dlocal"
 
@@ -223,7 +231,8 @@ def _crear_pago_redirect(
             "success_url": body["success_url"],
             "payer_name": body["payer"]["name"],
             "payer_email": body["payer"]["email"],
-            "payer_document": body["payer"]["document"],
+            "payer_document": body["payer"].get("document"),
+            "payer_document_country": body["payer"].get("document_country"),
         }
         raise RuntimeError(f"dLocal Go rechazó la solicitud: {data}. Enviado: {resumen_enviado}")
     return data
