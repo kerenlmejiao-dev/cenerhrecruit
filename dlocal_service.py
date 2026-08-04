@@ -130,27 +130,48 @@ def obtener_info_cuenta() -> dict:
     return {"status_code": respuesta.status_code, "body": cuerpo}
 
 
-def crear_pago_prueba_diagnostico() -> dict:
-    """Crea un pago de prueba (RD$1) con el payload MÍNIMO posible -- sin
-    objeto "payer" -- para aislar si el rechazo viene de los datos del
-    pagador o de la cuenta/moneda/país en sí. No cobra nada hasta que
-    alguien complete el checkout; solo registra la intención de pago."""
-    order_id = f"diagnostico-{os.urandom(4).hex()}"
-    body = {
-        "amount": 1.0,
-        "currency": MONEDA,
-        "country": PAIS,
-        "order_id": order_id,
-        "description": "CENERH diagnostico",
-        "success_url": f"{FRONTEND_URL}/pagos/resultado",
-        "back_url": f"{FRONTEND_URL}/pagos/resultado",
-    }
+def _probar_payload(body: dict) -> dict:
     respuesta = requests.post(f"{API_BASE_URL}/v1/payments", json=body, headers=_headers(), timeout=15)
     try:
         cuerpo = respuesta.json()
     except Exception:
         cuerpo = respuesta.text
     return {"status_code": respuesta.status_code, "body": cuerpo, "enviado": body}
+
+
+def crear_pago_prueba_diagnostico() -> dict:
+    """Prueba varias variantes del payload de pago, agregando UN elemento a
+    la vez sobre la base mínima que ya sabemos que funciona, para aislar
+    exactamente qué combinación dispara "Invalid values". Usa RD$100 (por
+    encima del mínimo que rechazó RD$1) y no cobra nada hasta que alguien
+    complete el checkout -- solo registra la intención de pago."""
+    base = {
+        "amount": 100.0,
+        "currency": MONEDA,
+        "country": PAIS,
+        "order_id": f"diagnostico-{os.urandom(4).hex()}",
+        "description": "CENERH diagnostico",
+        "success_url": f"{FRONTEND_URL}/pagos/resultado",
+        "back_url": f"{FRONTEND_URL}/pagos/resultado",
+    }
+
+    resultados = {}
+    resultados["1_minimo_sin_payer"] = _probar_payload(dict(base, order_id=f"{base['order_id']}-a"))
+
+    con_query = dict(base, order_id=f"{base['order_id']}-b")
+    con_query["success_url"] = f"{FRONTEND_URL}/pagos/resultado?order_id={con_query['order_id']}"
+    con_query["back_url"] = con_query["success_url"]
+    resultados["2_con_query_string_en_url"] = _probar_payload(con_query)
+
+    con_payer = dict(base, order_id=f"{base['order_id']}-c")
+    con_payer["payer"] = {"name": "Keren Mejia", "email": "diagnostico@cenerhconsulting.com", "document": "00115605545"}
+    resultados["3_con_payer"] = _probar_payload(con_payer)
+
+    con_payer_sin_document = dict(base, order_id=f"{base['order_id']}-d")
+    con_payer_sin_document["payer"] = {"name": "Keren Mejia", "email": "diagnostico@cenerhconsulting.com"}
+    resultados["4_con_payer_sin_document"] = _probar_payload(con_payer_sin_document)
+
+    return resultados
 
 
 def _crear_pago_redirect(
