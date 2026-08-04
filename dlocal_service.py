@@ -21,7 +21,6 @@ consultarlo aparte con GET /v1/payments/{id}.
 import hashlib
 import hmac
 import os
-import re
 
 import requests
 
@@ -224,15 +223,19 @@ def _crear_pago_redirect(
             "email": payer_email,
         },
     }
-    documento_limpio = re.sub(r"\D", "", payer_documento or "")
-    if documento_limpio:
-        # dLocal Go exige que "document" venga acompañado de "document_country"
-        # -- enviar "document" solo (sin este campo) lo rechaza con "Invalid
-        # values" sin decir cuál es el problema (confirmado por diagnóstico
-        # manual: el mismo payload sin "document" se acepta, y la respuesta
-        # de dLocal ya trae "document_country" propio).
-        body["payer"]["document"] = documento_limpio
-        body["payer"]["document_country"] = PAIS
+    # payer_documento (la cédula/RNC) NO se envía a dLocal Go: diagnosticado
+    # a mano (2026-08-04) que incluir "document" en el payer hace que dLocal
+    # Go rechace la solicitud completa con "Invalid values" -- probado con y
+    # sin "document_country", con nombre junto o separado en first_name/
+    # last_name, siempre falla igual apenas aparece "document". Sin él, el
+    # pago se crea sin problema (dLocal Go no lo exige; su propio checkout
+    # hospedado puede pedirlo directamente si lo necesita). Es probable que
+    # esté ligado a que la cuenta todavía tiene kyc_level_status="PENDING"
+    # (ver GET /api/admin/dlocal-diagnostico) -- si dLocal confirma que el
+    # KYC es la causa, esto se puede volver a intentar una vez esté
+    # aprobado. payer_documento queda sin usar aquí a propósito; se sigue
+    # guardando en nuestra base desde el checkout (ver pagos_router.py) por
+    # si se necesita para facturación o para reintentar esto más adelante.
     if NOTIFICATION_BASE_URL:
         body["notification_url"] = f"{NOTIFICATION_BASE_URL}/api/webhooks/dlocal"
 
