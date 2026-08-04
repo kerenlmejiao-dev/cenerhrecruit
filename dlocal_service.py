@@ -171,6 +171,33 @@ def crear_pago_prueba_diagnostico() -> dict:
     con_payer_sin_document["payer"] = {"name": "Keren Mejia", "email": "diagnostico@cenerhconsulting.com"}
     resultados["4_con_payer_sin_document"] = _probar_payload(con_payer_sin_document)
 
+    con_document_country = dict(base, order_id=f"{base['order_id']}-e")
+    con_document_country["payer"] = {
+        "name": "Keren Mejia",
+        "email": "diagnostico@cenerhconsulting.com",
+        "document": "00115605545",
+        "document_country": "DO",
+    }
+    resultados["5_con_document_y_document_country"] = _probar_payload(con_document_country)
+
+    con_nombre_separado = dict(base, order_id=f"{base['order_id']}-f")
+    con_nombre_separado["payer"] = {
+        "first_name": "Keren",
+        "last_name": "Mejia",
+        "email": "diagnostico@cenerhconsulting.com",
+        "document": "00115605545",
+        "document_country": "DO",
+    }
+    resultados["6_nombre_separado_con_document"] = _probar_payload(con_nombre_separado)
+
+    solo_document_sin_nombre = dict(base, order_id=f"{base['order_id']}-g")
+    solo_document_sin_nombre["payer"] = {
+        "email": "diagnostico@cenerhconsulting.com",
+        "document": "00115605545",
+        "document_country": "DO",
+    }
+    resultados["7_document_sin_name"] = _probar_payload(solo_document_sin_nombre)
+
     return resultados
 
 
