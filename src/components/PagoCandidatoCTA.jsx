@@ -53,6 +53,7 @@ export default function PagoCandidatoCTA({ candidatoId, tipo, precio, titulo, de
             className="w-full px-4 py-2.5 bg-[#0D0D0D] border border-[#2a2a2a] text-white text-center mb-3 focus:ring-1 focus:ring-[#C9A14A] focus:border-[#C9A14A] outline-none"
           />
           <button
+            type="button"
             onClick={() => handlePagar(documento)}
             disabled={procesando || !documento.trim()}
             className="w-full bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-2.5 px-6 transition disabled:opacity-50"
@@ -62,6 +63,7 @@ export default function PagoCandidatoCTA({ candidatoId, tipo, precio, titulo, de
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => handlePagar()}
           disabled={procesando}
           className="bg-[#D62828] hover:bg-[#b91f1f] text-white font-bold tracking-wide py-2.5 px-6 transition disabled:opacity-50"
