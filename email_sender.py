@@ -23,6 +23,10 @@ class EnviadorEmail:
     SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USER = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    # Sin esto, una conexión SMTP mal configurada (host/puerto equivocado,
+    # bloqueado por firewall) cuelga la solicitud del usuario por minutos en
+    # vez de fallar rápido -- smtplib.SMTP() no tiene timeout por defecto.
+    SMTP_TIMEOUT_SEGUNDOS = 10
     
     REMITENTE_NAME = "CENERH Consulting"
     REMITENTE_EMAIL = "reportes@cenerhconsulting.com"
@@ -127,7 +131,7 @@ class EnviadorEmail:
                     "modo": "simulado (mock)",
                 }
 
-            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT, timeout=EnviadorEmail.SMTP_TIMEOUT_SEGUNDOS)
             try:
                 server.starttls()
                 server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
@@ -205,7 +209,7 @@ class EnviadorEmail:
                     "modo": "simulado (mock)",
                 }
 
-            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT, timeout=EnviadorEmail.SMTP_TIMEOUT_SEGUNDOS)
             try:
                 server.starttls()
                 server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
@@ -272,7 +276,7 @@ class EnviadorEmail:
                     "modo": "simulado (mock)",
                 }
 
-            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT, timeout=EnviadorEmail.SMTP_TIMEOUT_SEGUNDOS)
             try:
                 server.starttls()
                 server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
@@ -339,7 +343,7 @@ class EnviadorEmail:
                     "modo": "simulado (mock)",
                 }
 
-            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT)
+            server = smtplib.SMTP(EnviadorEmail.SMTP_SERVER, EnviadorEmail.SMTP_PORT, timeout=EnviadorEmail.SMTP_TIMEOUT_SEGUNDOS)
             try:
                 server.starttls()
                 server.login(EnviadorEmail.SMTP_USER, EnviadorEmail.SMTP_PASSWORD)
